@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+// Enums para los estados definidos en el documento
+enum EstadoOrden {
+  CREADA
+  PAGADA
+  CANCELADA
+  FINALIZADA
+}
+
+enum EstadoPaquete {
+  PREPARADO
+  RETIRADO
+  ENTREGADO
+}
+
+// 1. Tabla Vendedores
+model Vendedor {
+  id_seller     String   @id @default(uuid())
+  clerk_user_id String   @unique
+  name          String
+  email         String   @unique
+  address       String
+  sales_made    Int      @default(0)
+  rating        Float    @default(0.0)
+
+  // Relaciones inversas (necesarias en Prisma)
+  productos Producto[]
+  paquetes  Paquete[]
+}
+
+// 2. Tabla Categorías
+model Categoria {
+  id_category String     @id @default(uuid())
+  name        String
+  productos   Producto[]
+}
+
+// 3. Tabla Productos
+model Producto {
+  id_item        String   @id @default(uuid())
+  name           String
+  description    String
+  price          Decimal
+  discount_price Decimal? // Opcional, ya que solo aplica si hay promoción
+  stock          Int      @default(0)
+
+  // Relaciones
+  id_seller   String
+  vendedor    Vendedor  @relation(fields: [id_seller], references: [id_seller])
+  
+  id_category String
+  categoria   Categoria @relation(fields: [id_category], references: [id_category])
+
+  articulosPaquete ArticuloPaquete[]
+}
+
+// 4. Tabla Orden de Compra
+model OrdenCompra {
+  id_purchase_order    String      @id @default(uuid())
+  id_buyer             String
+  id_buyer_app         String
+  total_price          Decimal
+  id_payment_operation String?     // Opcional al inicio, lo provee Payments App luego
+  status               EstadoOrden @default(CREADA)
+  created_at           DateTime    @default(now())
+
+  paquetes Paquete[]
+}
+
+// 5. Tabla Paquete
+model Paquete {
+  id_package        String        @id @default(uuid())
+  id_seller_app     String
+  price_package     Decimal
+  status            EstadoPaquete @default(PREPARADO)
+
+  // Relaciones
+  id_purchase_order String
+  ordenCompra       OrdenCompra   @relation(fields: [id_purchase_order], references: [id_purchase_order])
+  
+  id_seller         String
+  vendedor          Vendedor      @relation(fields: [id_seller], references: [id_seller])
+
+  articulos ArticuloPaquete[]
+}
+
+// 6. Tabla Artículo Paquete
+model ArticuloPaquete {
+  id_item_package String  @id @default(uuid())
+  quantity        Int
+  sale_price      Decimal
+
+  // Relaciones
+  id_package String
+  paquete    Paquete  @relation(fields: [id_package], references: [id_package])
+  
+  id_item    String
+  producto   Producto @relation(fields: [id_item], references: [id_item])
+}
