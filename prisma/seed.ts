@@ -7,7 +7,7 @@ const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL as string,
 });
 
-// 2. Inicializamos Prisma usando ese adaptador (¡La regla obligatoria de Prisma 7!)
+// 2. Inicializamos Prisma usando ese adaptador 
 const prisma = new PrismaClient({ adapter });
 
 async function main() {

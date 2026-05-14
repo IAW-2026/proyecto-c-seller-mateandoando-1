@@ -27,3 +27,10 @@ Diseño y desarrollo de la "Seller App", un módulo central dentro de un ecosist
 *   Modelado de Bases de Datos Relacionales (PostgreSQL)
 *   Resolución analítica de problemas de configuración de entorno
 *   Gestión de control de versiones (Git/GitHub)
+
+### Diseño de Interfaz y Experiencia de Usuario (UI/UX)
+*   Implementación de Design Systems: Integración de shadcn/ui basado en componentes de Radix UI para garantizar accesibilidad y un diseño profesional consistente.
+
+*   Navegación Dinámica y Route Groups: Organización de la arquitectura de información mediante el uso de Route Groups (dashboard), permitiendo la separación lógica entre las vistas de autenticación y el panel de control del vendedor sin afectar la jerarquía de las URLs.
+
+*   Personalización Visual: Desarrollo de una identidad de marca coherente aplicada mediante clases de utilidad de Tailwind CSS, enfocada en el nicho de productos regionales (mates y termos).
