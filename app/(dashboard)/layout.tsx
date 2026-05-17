@@ -1,4 +1,4 @@
-import Sidebar from "./Sidebar";
+import Sidebar from "./dashboard/Sidebar";
 
 // Este componente NO se recarga cuando el usuario navega entre las opciones 
 // del dashboard. Solo cambia lo que viaja adentro de "children".

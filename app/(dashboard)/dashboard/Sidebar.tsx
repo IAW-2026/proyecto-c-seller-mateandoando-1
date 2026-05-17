@@ -7,7 +7,7 @@ import { SignOutButton } from "@clerk/nextjs";
 // Definimos las rutas en un arreglo
 const MENU_ITEMS = [
   { name: "Dashboard", href: "/dashboard" },
-  { name: "Inventario", href: "/dashboard/inventario" },
+  { name: "Productos", href: "/dashboard/productos" },
   { name: "Órdenes", href: "/dashboard/ordenes" },
   { name: "Añadir Producto", href: "/dashboard/productos/nuevo" },
 ];

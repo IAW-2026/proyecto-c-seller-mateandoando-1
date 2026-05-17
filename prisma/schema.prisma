@@ -54,7 +54,7 @@ model Producto {
   price          Decimal
   discount_price Decimal? // Opcional, ya que solo aplica si hay promoción
   stock          Int      @default(0)
-
+  image_url      String
   // Relaciones
   id_seller   String
   vendedor    Vendedor  @relation(fields: [id_seller], references: [id_seller])
