@@ -7,9 +7,9 @@ import { SignOutButton } from "@clerk/nextjs";
 // Definimos las rutas en un arreglo
 const MENU_ITEMS = [
   { name: "Dashboard", href: "/dashboard" },
-  { name: "Productos", href: "/dashboard/productos" },
-  { name: "Órdenes", href: "/dashboard/ordenes" },
-  { name: "Añadir Producto", href: "/dashboard/productos/nuevo" },
+  { name: "Productos", href: "/productos" },
+  { name: "Órdenes", href: "/ordenes" },
+  { name: "Añadir Producto", href: "/nuevo" },
 ];
 
 export default function Sidebar() {

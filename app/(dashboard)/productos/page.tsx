@@ -3,10 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 
 const ITEMS_PER_PAGE = 10;
 
-export default async function ProductosPage({ 
-    searchParams 
-}: { 
-    searchParams: { page?: string } 
+export default async function ProductosPage(props: {
+  searchParams: Promise<{ page?: string }>;
 }) {
     // 1. Obtener el usuario autenticado
     const { userId } = await auth();
@@ -23,7 +21,7 @@ export default async function ProductosPage({
     if (!vendedor) {
         return <div>Vendedor no encontrado</div>;
     }
-
+    const searchParams = await props.searchParams;
     const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10));
     const skip = (currentPage - 1) * ITEMS_PER_PAGE;
 

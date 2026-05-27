@@ -22,6 +22,7 @@ enum EstadoPaquete {
   PREPARADO
   RETIRADO
   ENTREGADO
+  CANCELADO
 }
 
 // 1. Tabla Vendedores
