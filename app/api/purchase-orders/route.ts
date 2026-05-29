@@ -12,16 +12,56 @@ type ItemGroup = {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // Aseguramos extraer id_buyer_app del body
-    const { id_buyer, id_buyer_app, items } = body; 
+    const { id_buyer, id_buyer_app, items, zip_code, address_snapshot } = body; 
 
     // Validación
-    if (!id_buyer || !items || !Array.isArray(items) || items.length === 0) {
+    if (!id_buyer || !items || !Array.isArray(items) || items.length === 0 || !zip_code || !address_snapshot) {
       return NextResponse.json(
         { error: "Faltan campos obligatorios" },
         { status: 400 }
       );
     }
+
+    // Consultamos el costo de envío antes de armar los totales
+    let shippingCost = 5000; // Valor por defecto en caso de fallo con la Shipping App
+    let carrierName = "Correo Argentino"; // Valor por defecto
+
+    try {
+      // Extraemos la clave de entorno de forma segura
+    const shippingApiKey = process.env.SHIPPING_API_KEY;
+
+    if (!shippingApiKey) {
+      throw new Error("Falta configurar SHIPPING_API_KEY en las variables de entorno");
+    }
+
+    /*const shippingResponse = await fetch(`${process.env.NEXT_PUBLIC_SHIPPING_URL}/api/shipping/cost`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "X-API-Key": shippingApiKey 
+      },
+      body: JSON.stringify({ zip_code })
+    });
+
+      if (!shippingResponse.ok) {
+        throw new Error("No se pudo obtener tarifa de Shipping App");
+      }
+
+      const shippingData = await shippingResponse.json();
+      shippingCost = Number(shippingData.cost);
+      // Tomamos el carrier name (soportando tanto si usan espacio o guión bajo en la clave)
+      carrierName = shippingData["carrier name"] || shippingData.carrier_name; 
+
+    } */}catch (error) {
+      console.error("Error al consultar Shipping App:", error);
+      return NextResponse.json(
+        { error: "Error calculando costos de envío con logística" },
+        { status: 500 }
+      );
+    } 
+    
+
+    // ------------------------------------------
 
     // Obtener información de todos los productos y agrupar por vendedor
     const productosMap = new Map<string, ItemGroup[]>();
@@ -42,7 +82,6 @@ export async function POST(request: Request) {
         productosMap.set(producto.id_seller, []);
       }
       
-      // Usamos el "!" para garantizar que existe
       const grupo = productosMap.get(producto.id_seller)!;
       grupo.push({
         producto,
@@ -55,18 +94,23 @@ export async function POST(request: Request) {
     let totalPrice = 0;
 
     for (const [id_seller, items_grupo] of productosMap) {
-      const precioPackageRaw = items_grupo.reduce<number>(
+      // Calculamos solo el costo de los productos
+      const sumaProductos = items_grupo.reduce<number>(
         (sum, item) => sum + Number(item.producto.price) * item.quantity,
         0
       );
 
-      // Forzamos a que tenga solo 2 decimales de precisión
+      // --- 2. NUEVO: SUMAR EL ENVÍO AL PAQUETE ---
+      // El precio del paquete es Productos + Envío
+      const precioPackageRaw = sumaProductos + shippingCost;
       const precioPackage = Number(precioPackageRaw.toFixed(2)); 
       totalPrice += precioPackage;
 
       paquetesData.push({
         id_seller_app: id_buyer_app || "buyer-app-default", 
         price_package: precioPackage,
+        shipping_cost: shippingCost, // Guardamos el costo logístico
+        carrier_name: carrierName,   // Guardamos el correo
         vendedor: { connect: { id_seller: id_seller } }, 
         articulos: {
           create: items_grupo.map((item) => ({
@@ -76,6 +120,7 @@ export async function POST(request: Request) {
           })),
         },
       });
+      // ------------------------------------------
     }
 
     const nuevaOrden = await db.ordenCompra.create({
@@ -84,6 +129,8 @@ export async function POST(request: Request) {
         id_buyer_app: id_buyer_app || "buyer-app-default", 
         total_price: totalPrice,
         status: "CREADA",
+        zip_code,
+        address_snapshot,
         paquetes: {
           create: paquetesData, 
         },
@@ -91,6 +138,7 @@ export async function POST(request: Request) {
       include: { paquetes: true },
     });
 
+    // --- 3. NUEVO: ACTUALIZACIÓN DE RESPUESTA ---
     const response = {
       id_purchase_order: nuevaOrden.id_purchase_order,
       total_price: Number(nuevaOrden.total_price),
@@ -99,7 +147,10 @@ export async function POST(request: Request) {
         id_package: pkg.id_package,
         id_seller: pkg.id_seller,
       })),
+      zip_code: nuevaOrden.zip_code,
+      address_snapshot: nuevaOrden.address_snapshot
     };
+    // ------------------------------------------
 
     return NextResponse.json(response, { status: 201 });
 
@@ -111,4 +162,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

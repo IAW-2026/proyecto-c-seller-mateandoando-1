@@ -1,54 +1,50 @@
 // app/api/purchase-orders/route.ts
-import db from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import db from "@/lib/prisma";
 
-import type { Producto, Vendedor, EstadoOrden, EstadoPaquete} from "@prisma/client";
+export async function PATCH(
+  request: Request,
+  // 1. Le avisamos a TypeScript el nombre real de la carpeta
+  { params }: { params: Promise<{ id_purchase_order: string }> } 
+) {
+  const apiKey = request.headers.get("X-API-Key");
+  
+  if (apiKey !== process.env.PAYMENTS_API_KEY) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
 
-interface RouteParams {
-  params: Promise<{
-    id_purchase_order: string;
-  }>;
-}
-
-
-//8. PATCH /api/purchase-orders/{id_purchase_order}/payment
-export async function PATCH(request: Request, { params }: RouteParams) {
   try {
-    const { id_purchase_order } = await params;
+    // 2. Extraemos el valor usando el nombre correcto
+    const { id_purchase_order } = await params; 
     const body = await request.json();
-    const { payment_status } = body;
-
-    if (!payment_status || !["PAGADA", "CANCELADA"].includes(payment_status) || !id_purchase_order) {
-     return NextResponse.json(
-        { error: "Faltan campos obligatorios" },
-        { status: 400 }
-      );
-    };
-    const newOrderStatus: EstadoOrden = payment_status === "PAGADA" ? "PAGADA" : "CANCELADA";
-    const newPackageStatus: EstadoPaquete = payment_status === "PAGADA" ? "PREPARADO" : "CANCELADO";
-    const response = {
-      id_purchase_order: id_purchase_order,
-      status: newOrderStatus,
-      packages_status:newPackageStatus,
-    };
-    await db.ordenCompra.update({
-      where: { id_purchase_order },
-      data: {
-        status: response.status,
-        paquetes: {
-          updateMany: {
-            where: {},
-            data: { status: response.packages_status },
-          },
-        },
+    
+    const ordenActualizada = await db.ordenCompra.update({
+      where: { 
+        // 3. Se lo pasamos a Prisma
+        id_purchase_order: id_purchase_order 
       },
+      data: {
+        status: body.status, 
+        id_payment_operation: body.id_payment_operation 
+      }
     });
-    return NextResponse.json(response, { status: 200 });
+
+    await db.paquete.updateMany({
+      where: { 
+        id_purchase_order: id_purchase_order 
+      },
+      data: { 
+        status: "PREPARADO" 
+      }
+    });
+    
+    return NextResponse.json({
+      id_purchase_order: ordenActualizada.id_purchase_order,
+      status: ordenActualizada.status,
+      packages_status: "PREPARADO"
+    });
   } catch (error) {
-    console.error("Error actualizando el estado de pago:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor al actualizar el estado de pago" },
-      { status: 500 }
-    );
+    console.error("Error actualizando el pago:", error);
+    return NextResponse.json({ error: "Error interno al actualizar la base de datos" }, { status: 500 });
   }
 }

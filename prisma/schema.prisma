@@ -75,7 +75,8 @@ model OrdenCompra {
   id_payment_operation String?     // Opcional al inicio, lo provee Payments App luego
   status               EstadoOrden @default(CREADA)
   created_at           DateTime    @default(now())
-
+  address_snapshot     String      @default("Chiclana 100, Bahia Blanca")// Captura la dirección inmutable a donde debe llegar el pedido
+  zip_code             Int         @default(8000)
   paquetes Paquete[]
 }
 
@@ -84,7 +85,9 @@ model Paquete {
   id_package        String        @id @default(uuid())
   id_seller_app     String
   price_package     Decimal
-  status            EstadoPaquete @default(PREPARADO)
+  status            EstadoPaquete @default(PREPARADO)    
+  carrier_name      String        @default("Correo Argentino")
+  shipping_cost     Decimal       @default(1000)
 
   // Relaciones
   id_purchase_order String
