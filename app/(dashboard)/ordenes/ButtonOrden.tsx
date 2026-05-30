@@ -1,7 +1,6 @@
 //app/(dashboard)/ordenes/ButtonOrden.tsx
 //va a recibir la orden real que le mandó el servidor para hacer las consultas
 
-// app/(dashboard)/ordenes/BotoneraOrden.tsx
 "use client";
 
 import { useState } from "react";
@@ -66,30 +65,47 @@ const despacharPaquete = async () => {
     try {
       const token = await getToken();
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SHIPPING_URL}/api/shippings/${miPaquete.id_package}/dispatch`, {
-        method: "PATCH",
+      // Le avisamos a Shipping App
+      const responseShipping = await fetch(`${process.env.NEXT_PUBLIC_SHIPPING_URL}/api/shippings/${miPaquete.id_package}/dispatch`, {
+        // Agregamos el método PATCH
+        method: "PATCH", 
+        // Agregamos los headers (Avisando que mandamos un JSON y pasando el token del usuario)
         headers: { 
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
         },
+        // Armamos el body exactamente como lo pide la api
         body: JSON.stringify({
-          // lo mandamos por las dudas, aunque la Shipping App ya tiene el costo y carrier asignados desde la creación del paquete
           id_package: miPaquete.id_package,
-          
-          // Estos dos salen directamente del paquete:
           carrier_name: miPaquete.carrier_name,
-          shipping_cost: miPaquete.shipping_cost,
-          // La dirección la sacamos de la orden general, no del paquete
-          address_snapshot: ordenActiva.address_snapshot 
+          address_snapshot: ordenActiva.address_snapshot,
+          shipping_cost: miPaquete.shipping_cost
         })
       });
 
-      if (!response.ok) throw new Error("Fallo al despachar");
-      const data = await response.json();
-      alert(`¡Éxito! El paquete figura como: ${data.status}`);
+      if (!responseShipping.ok) throw new Error("Fallo al despachar en Shipping");
+      
+      const dataShipping = await responseShipping.json();
+      const trackingCode = dataShipping.id_shipments; 
+
+      // Le avisamos a NUESTRA propia base de datos
+      const responseLocal = await fetch(`/api/packages/${miPaquete.id_package}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "DESPACHADO",
+          id_shipments: trackingCode 
+        })
+      });
+
+      if (!responseLocal.ok) throw new Error("Fallo al guardar en nuestra base de datos");
+
+      alert(`¡Éxito! Paquete despachado. Seguimiento: ${trackingCode}`);
+      window.location.reload(); // la página se refresca sola al terminar
       
     } catch (error) {
-      alert("Error conectando con la Shipping App.");
+      console.error(error); 
+      alert("Error conectando con la logística.");
     } finally {
       setCargandoDespacho(false);
     }
@@ -119,16 +135,28 @@ const despacharPaquete = async () => {
         </span>
       </button>
 
-      <button 
-        onClick={despacharPaquete}
-        disabled={cargandoDespacho}
-        className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-orange-100 bg-orange-50 hover:bg-orange-100 text-orange-700 transition-colors disabled:opacity-50"
-      >
-        <span className="text-xl">📦</span>
-        <span className="font-semibold text-sm">
-          {cargandoDespacho ? "Avisando..." : "Despachar Paquete"}
-        </span>
-      </button>
+      {ordenActiva.paquetes[0].id_shipments ? (
+        <a 
+          href={`${process.env.NEXT_PUBLIC_SHIPPING_URL}/tracking/${ordenActiva.paquetes[0].id_shipments}`} 
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-blue-100 bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors text-center"
+        >
+          <span className="text-xl">🚚</span>
+          <span className="font-semibold text-sm">Seguir Envío</span>
+        </a>
+      ) : (
+        <button 
+          onClick={despacharPaquete}
+          disabled={cargandoDespacho}
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-orange-100 bg-orange-50 hover:bg-orange-100 text-orange-700 transition-colors disabled:opacity-50"
+        >
+          <span className="text-xl">📦</span>
+          <span className="font-semibold text-sm">
+            {cargandoDespacho ? "Avisando..." : "Despachar Paquete"}
+          </span>
+        </button>
+      )}
     </div>
   );
 }

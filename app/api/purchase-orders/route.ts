@@ -28,31 +28,33 @@ export async function POST(request: Request) {
 
     try {
       // Extraemos la clave de entorno de forma segura
-    const shippingApiKey = process.env.SHIPPING_API_KEY;
+      const shippingApiKey = process.env.SHIPPING_API_KEY;
 
-    if (!shippingApiKey) {
-      throw new Error("Falta configurar SHIPPING_API_KEY en las variables de entorno");
-    }
+      if (!shippingApiKey) {
+        throw new Error("Falta configurar SHIPPING_API_KEY en las variables de entorno");
+      }
 
-    /*const shippingResponse = await fetch(`${process.env.NEXT_PUBLIC_SHIPPING_URL}/api/shipping/cost`, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "X-API-Key": shippingApiKey 
-      },
-      body: JSON.stringify({ zip_code })
-    });
+      const shippingResponse = await fetch(`${process.env.NEXT_PUBLIC_SHIPPING_URL}/api/shippings/cost`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "X-API-Key": shippingApiKey 
+        },
+        //  Usamos la key exacta de la api
+        body: JSON.stringify({ destination_zip_code: zip_code.toString() })
+      });
 
       if (!shippingResponse.ok) {
         throw new Error("No se pudo obtener tarifa de Shipping App");
       }
 
       const shippingData = await shippingResponse.json();
-      shippingCost = Number(shippingData.cost);
-      // Tomamos el carrier name (soportando tanto si usan espacio o guión bajo en la clave)
-      carrierName = shippingData["carrier name"] || shippingData.carrier_name; 
+      
+      //  Usamos las keys exactas de la api
+      shippingCost = Number(shippingData.cost_package);
+      carrierName = shippingData.carrier_name; 
 
-    } */}catch (error) {
+    } catch (error) {
       console.error("Error al consultar Shipping App:", error);
       return NextResponse.json(
         { error: "Error calculando costos de envío con logística" },

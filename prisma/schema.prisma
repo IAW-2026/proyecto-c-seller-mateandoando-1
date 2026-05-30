@@ -88,7 +88,7 @@ model Paquete {
   status            EstadoPaquete @default(PREPARADO)    
   carrier_name      String        @default("Correo Argentino")
   shipping_cost     Decimal       @default(1000)
-
+  id_shipments      String?
   // Relaciones
   id_purchase_order String
   ordenCompra       OrdenCompra   @relation(fields: [id_purchase_order], references: [id_purchase_order])
