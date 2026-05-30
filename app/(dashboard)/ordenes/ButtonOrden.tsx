@@ -79,7 +79,8 @@ const despacharPaquete = async () => {
           id_package: miPaquete.id_package,
           carrier_name: miPaquete.carrier_name,
           address_snapshot: ordenActiva.address_snapshot,
-          shipping_cost: miPaquete.shipping_cost
+          shipping_cost: miPaquete.shipping_cost,
+          id_user: ordenActiva.id_buyer
         })
       });
 

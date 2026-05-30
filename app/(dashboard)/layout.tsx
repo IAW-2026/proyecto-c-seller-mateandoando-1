@@ -1,21 +1,23 @@
 import Sidebar from "./dashboard/Sidebar";
 
-// Este componente NO se recarga cuando el usuario navega entre las opciones 
-// del dashboard. Solo cambia lo que viaja adentro de "children".
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#F9F7F2]">
-      {/* Columna Izquierda: La barra estática */}
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#F9F7F2]">
+      
       <Sidebar />
 
-      {/* Columna Derecha: El contenido dinámico */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        {children}
-      </main>
+     <main className="flex-1 overflow-y-auto bg-[#F9F7F2] w-full">
+      {/* El pt-20 asegura que nada quede debajo de la hamburguesa en el celular */}
+      {/* max-w-7xl mx-auto centra el contenido en PC y le da un ancho ideal de lectura */}
+        <div className="p-4 pt-20 md:p-8 max-w-7xl mx-auto">
+          {children}
+        </div>
+     </main>
+
     </div>
   );
 }

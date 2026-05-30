@@ -1,4 +1,4 @@
-// app/(dashboard)/nuevo/page.tsx
+//app/(dashboard)/nuevo/page.tsx
 "use client"; 
 
 import { useForm } from "react-hook-form";
@@ -13,15 +13,26 @@ interface Categoria {
 }
 
 export default function NuevoProductoPage() {
-  // 1. Extraemos "trigger" para validar antes de avanzar de paso
-  const { register, handleSubmit, setValue, getValues, trigger, formState: { errors } } = useForm();
+  // 1. CAMBIO CLAVE: Agregamos mode: "onBlur" para validar al salir del input
+  const { register, handleSubmit, setValue, getValues, formState: { errors }, reset } = useForm({
+    mode: "onBlur" 
+  });
   
-  // 2. Estado para controlar la vista: empezamos en el paso 1
-  const [paso, setPaso] = useState(1);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  
   const { user, isLoaded } = useUser();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [imagenSubida, setImagenSubida] = useState<string | null>(null);
+
+  // 2. ESTADO DEL TOAST (Notificación emergente)
+  const [toast, setToast] = useState({ visible: false, mensaje: "", tipo: "success" });
+
+  const mostrarToast = (mensaje: string, tipo: "success" | "error" = "success") => {
+    setToast({ visible: true, mensaje, tipo });
+    // Desaparece automáticamente a los 3.5 segundos
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, visible: false }));
+    }, 3500);
+  };
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -37,257 +48,226 @@ export default function NuevoProductoPage() {
     fetchCategorias();
   }, []);
 
-  // 3. Función que se ejecuta al apretar "Siguiente"
-  const handleSiguiente = async () => {
-    // Le pedimos a react-hook-form que valide SÓLO estos dos campos
-    const esValido = await trigger(["name", "id_category"]);
-    if (esValido) {
-      setPaso(2); // Si está todo ok, mostramos el resto
-    }
-  };
-
-  // 4. Esta función manda todo finalmente a tu API y Neon
   const onSubmit = async (data: any) => {
-    const payloadCompleto = {
-      ...data,
-      id_seller: "seller123"
-    };
-    
-    console.log("Datos armados listos para Neon:", payloadCompleto);
-
+    const payloadCompleto = { ...data, id_seller: "seller123" };
     try {
-      // Reemplazá "/api/items" por la ruta exacta que armaste en tu contrato para POST de productos
       const response = await fetch("/api/items", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadCompleto),
       });
-
-      if (!response.ok) {
-        throw new Error("Falló la conexión con el servidor");
-      }
-
-      const productoCreado = await response.json();
-      alert("¡Producto publicado con éxito en la Seller App!");
-      console.log("Respuesta del servidor:", productoCreado);
       
-      // Opcional: Podés redirigir al vendedor de vuelta a /productos acá
+      if (!response.ok) throw new Error("Falló la conexión con el servidor");
+      
+      // 3. MOSTRAMOS EL TOAST DE ÉXITO EN VEZ DEL ALERT
+      mostrarToast("¡Producto publicado con éxito!");
+      
+      // Opcional: Limpiamos el formulario para que pueda cargar otro
+      reset();
+      setImagenSubida(null);
 
     } catch (error) {
-      console.error("Error guardando el producto:", error);
-      alert("Hubo un error al guardar el producto. Revisá la consola.");
+      // MOSTRAMOS EL TOAST DE ERROR
+      mostrarToast("Hubo un error al guardar el producto", "error");
     }
   };
-const handleGenerarIA = async () => {
-  setIsGenerating(true);
-  try {
-    // 1. Le pedimos a react-hook-form que nos dé los valores exactos en este milisegundo
-    const nombreIngresado = getValues("name");
-    const idCategoriaIngresada = getValues("id_category");
 
-    // Validamos rápido que haya puesto un nombre antes de gastar un llamado a la IA
-    if (!nombreIngresado) {
-      alert("Por favor, escribí el nombre del producto primero.");
+  const handleGenerarIA = async () => {
+    setIsGenerating(true);
+    try {
+      const nombreIngresado = getValues("name");
+      const idCategoriaIngresada = getValues("id_category");
+
+      if (!nombreIngresado) {
+        mostrarToast("Escribí el nombre del producto primero", "error");
+        setIsGenerating(false);
+        return;
+      }
+
+      const response = await fetch("/api/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          nombre: nombreIngresado, 
+          categoria: categorias.find(c => c.id_category === idCategoriaIngresada)?.name || "General" 
+        }),
+      });
+
+      if (!response.ok) throw new Error("Fallo al conectar con IA");
+      const data = await response.json();
+      setValue("description", data.description, { shouldValidate: true });
+      mostrarToast("¡Descripción generada!");
+    } catch (error) {
+      mostrarToast("No se pudo generar la descripción", "error");
+    } finally {
       setIsGenerating(false);
-      return;
     }
+  };
 
-    const response = await fetch("/api/generate-description", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        nombre: nombreIngresado, 
-        // Buscamos el nombre de la categoría usando el ID que sacamos del formulario
-        categoria: categorias.find(c => c.id_category === idCategoriaIngresada)?.name || "General" 
-      }),
-    });
-
-    if (!response.ok) {
-      // Si falla, leemos exactamente qué nos mandó el servidor
-      const errorData = await response.json();
-      throw new Error(`Detalle del servidor: ${errorData.error || errorData.message || "Desconocido"}`);
-    }
-    
-    const data = await response.json();
-    
-    // Inyectamos el texto mágico en el textarea
-    setValue("description", data.description, { shouldValidate: true });
-    
-  } catch (error) {
-    alert("No se pudo generar la descripción ahora mismo.");
-    console.error(error);
-  } finally {
-    setIsGenerating(false);
-  }
-};
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-[#1B4332] mb-6">Añadir Nuevo Producto</h1>
+    <div className="w-full max-w-3xl pb-12 relative">
       
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 max-w-md">
+      <div className="mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
+          Añadir Nuevo Producto
+        </h1>
+        <p className="text-slate-500 mt-2">Completa los detalles para publicar tu artículo en la tienda.</p>
+      </div>
+      
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
         
-        {/* --- PASO 1: CAMPOS INICIALES --- */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-gray-700">Nombre del Producto</label>
-          <input 
-            placeholder="Ej: Termo Stanley 1L" 
-            {...register("name", { 
-              required: "El nombre es obligatorio",
-              minLength: { value: 3, message: "Debe tener al menos 3 caracteres" }
-            })} 
-            className={`p-2 rounded border ${errors.name ? "border-red-500" : "border-gray-300"}`}
-            disabled={paso === 2} // Bloqueamos el input si ya pasó al paso 2
-          />
-          {errors.name && <span className="text-red-500 text-sm">{errors.name.message as string}</span>}
-        </div>
+        {/* BLOQUE 1: INFORMACIÓN PRINCIPAL */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+          <h2 className="text-lg font-bold text-slate-800 border-b border-gray-50 pb-2">Información Básica</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-700">Nombre del Producto</label>
+              <input 
+                placeholder="Ej: Termo Stanley 1L" 
+                {...register("name", { required: "Obligatorio", minLength: 3 })} 
+                className={`w-full p-3 rounded-xl border shadow-sm focus:ring-2 outline-none transition-all ${errors.name ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-[#1B4332] focus:ring-[#1B4332]/20'}`}
+              />
+            </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-gray-700">Categoría</label>
-          <select 
-            {...register("id_category", { required: "Debes elegir una categoría" })}
-            className={`p-2 rounded border bg-white ${errors.id_category ? "border-red-500" : "border-gray-300"}`}
-            disabled={paso === 2} // Bloqueamos el select si ya pasó al paso 2
-          >
-            <option value="">Seleccioná una categoría...</option>
-            {categorias.map((cat) => (
-              <option key={cat.id_category} value={cat.id_category}>{cat.name}</option>
-            ))}
-          </select>
-          {errors.id_category && <span className="text-red-500 text-sm">{errors.id_category.message as string}</span>}
-        </div>
-
-        {/* Botón Siguiente: Solo se muestra si estamos en el paso 1 */}
-        {paso === 1 && (
-          <div className="flex flex-col gap-1 mt-2">
-            <button
-              type="button" // ¡Crucial! Si dice "submit" manda el formulario entero
-              onClick={handleSiguiente}
-              className="bg-[#1B4332] text-white py-2 px-4 rounded font-bold hover:bg-[#143325] transition-colors"
-            >
-              Siguiente
-            </button>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-700">Categoría</label>
+              <select 
+                {...register("id_category", { required: "Obligatorio" })}
+                className={`w-full p-3 rounded-xl border bg-white shadow-sm focus:ring-2 outline-none transition-all ${errors.id_category ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-[#1B4332] focus:ring-[#1B4332]/20'}`}
+              >
+                <option value="">Seleccioná una categoría...</option>
+                {categorias.map((cat) => (
+                  <option key={cat.id_category} value={cat.id_category}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
-        )}
 
-        {/* --- PASO 2: CAMPOS OCULTOS --- */}
-        {paso === 2 && (
-          <div className="flex flex-col gap-5 p-5 bg-gray-50 border border-gray-200 rounded-lg animate-in fade-in slide-in-from-top-4 duration-300">
-            
-            {/* Vendedor Autocompletado */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-gray-700">Vendedor Asociado</label>
-              <input 
-                disabled 
-                value={isLoaded ? user?.fullName || user?.id : "Cargando..."}
-                className="p-2 rounded border border-gray-300 bg-gray-200 text-gray-500 cursor-not-allowed"
-              />
-              <span className="text-xs text-gray-500">Este campo se completa automáticamente con tu sesión.</span>
-            </div>
-
-            {/* Descripción con Botón de IA */}
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-between items-end mb-1">
-                <label className="text-sm font-semibold text-gray-700">Descripción</label>
-                <button 
-                  type="button" 
-                  onClick={handleGenerarIA}
-                  disabled={isGenerating}
-                  className="text-xs flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200 transition-colors disabled:opacity-50"
-                >
-                  {isGenerating ? "Generando..." : "✨ Autocompletar con IA"}
-                </button>
-              </div>
-              
-              <textarea 
-                placeholder="Detalla las características de tu producto..."
-                rows={4}
-                {...register("description", { 
-                  required: "La descripción es obligatoria",
-                  validate: (value) => {
-                    const palabras = value.trim().split(/\s+/);
-                    return palabras.length >= 5 || "La descripción debe tener al menos 5 palabras";
-                  }
-                })} 
-                className={`p-2 rounded border ${errors.description ? "border-red-500" : "border-gray-300"}`}
-              />
-              {errors.description && <span className="text-red-500 text-sm">{errors.description.message as string}</span>}
-            </div>
-
-            {/* Precio */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-gray-700">Precio (ARS)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-2 text-gray-500">$</span>
-                <input 
-                  type="number"
-                  placeholder="0.00" 
-                  {...register("price", { 
-                    required: "El precio es obligatorio",
-                    valueAsNumber: true,
-                    min: { value: 1, message: "El precio debe ser mayor a $1" }
-                  })} 
-                  className={`p-2 pl-7 rounded border w-full ${errors.price ? "border-red-500" : "border-gray-300"}`}
-                />
-              </div>
-              {errors.price && <span className="text-red-500 text-sm">{errors.price.message as string}</span>}
-            </div>
-
-            {/* Stock */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-gray-700">Stock Disponible</label>
-              <input 
-                type="number"
-                placeholder="0" 
-                {...register("stock", { 
-                  required: "El stock es obligatorio",
-                  valueAsNumber: true,
-                  min: { value: 0, message: "El stock debe ser un número positivo" }
-                })} 
-                className={`p-2 rounded border ${errors.stock ? "border-red-500" : "border-gray-300"}`}
-              />
-              {errors.stock && <span className="text-red-500 text-sm">{errors.stock.message as string}</span>}
-            </div>
-
-            {/* Imagen con UploadThing */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-gray-700">Foto del Producto</label>
-
-              <UploadButton<OurFileRouter, "imageUploader">
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  setValue("image_url", res[0].ufsUrl, { shouldValidate: true });
-                  alert("¡Imagen subida con éxito!");
-                }}
-                onUploadError={(error: Error) => {
-                  alert(`Error al subir: ${error.message}`);
-                }}
-              />
-
-              <input type="hidden" {...register("image_url", { required: "Debes adjuntar una imagen" })} />
-              {errors.image_url && <span className="text-red-500 text-sm">{errors.image_url.message as string}</span>}
-            </div>
-
-            {/* Botones de acción finales */}
-            <div className="flex gap-3 mt-4">
+          <div className="flex flex-col gap-1.5 mt-2">
+            <div className="flex justify-between items-end mb-1">
+              <label className="text-sm font-semibold text-slate-700">Descripción</label>
               <button 
                 type="button" 
-                onClick={() => setPaso(1)} 
-                className="w-1/3 bg-gray-200 text-gray-700 p-3 rounded-lg font-bold hover:bg-gray-300 transition-colors"
+                onClick={handleGenerarIA}
+                disabled={isGenerating}
+                className="text-xs flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-bold transition-colors disabled:opacity-50"
               >
-                Atrás
-              </button>
-              <button 
-                type="submit" 
-                className="w-2/3 bg-[#1B4332] text-white p-3 rounded-lg font-bold cursor-pointer hover:bg-[#143325] transition-colors"
-              >
-                Publicar Producto
+                {isGenerating ? "Generando..." : "✨ Autocompletar con IA"}
               </button>
             </div>
+            <textarea 
+              placeholder="Detalla las características de tu producto..."
+              rows={4}
+              {...register("description", { required: "Obligatorio" })} 
+              className={`w-full p-3 rounded-xl border shadow-sm focus:ring-2 outline-none resize-none transition-all ${errors.description ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-[#1B4332] focus:ring-[#1B4332]/20'}`}
+            />
           </div>
-        )}
+        </div>
+
+        {/* BLOQUE 2: PRECIO Y STOCK */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+          <h2 className="text-lg font-bold text-slate-800 border-b border-gray-50 pb-2">Inventario y Precio</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-700">Precio de Venta (ARS)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-3.5 text-slate-500 font-medium">$</span>
+                <input 
+                  type="number"
+                  step="0.01" // Permite decimales
+                  placeholder="0.00"
+                  {...register("price", { 
+                    required: "Obligatorio", 
+                    valueAsNumber: true,
+                    min: { value: 0.01, message: "El precio debe ser mayor a 0" } // <-- VALIDACIÓN
+                  })} 
+                  className={`w-full p-3 pl-8 rounded-xl border shadow-sm focus:ring-2 outline-none transition-all ${errors.price ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-[#1B4332] focus:ring-[#1B4332]/20'}`}
+                />
+              </div>
+              {/* Mensaje de error dinámico */}
+              {errors.price && <span className="text-red-500 text-xs font-medium ml-1">{errors.price.message as string}</span>}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-700">Stock Disponible</label>
+              <input 
+                type="number"
+                placeholder="Cantidad de unidades"
+                {...register("stock", { 
+                  required: "Obligatorio", 
+                  valueAsNumber: true,
+                  min: { value: 1, message: "El stock debe ser al menos 1 unidad" } // <-- VALIDACIÓN
+                })} 
+                className={`w-full p-3 rounded-xl border shadow-sm focus:ring-2 outline-none transition-all ${errors.stock ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-[#1B4332] focus:ring-[#1B4332]/20'}`}
+              />
+              {/* Mensaje de error dinámico */}
+              {errors.stock && <span className="text-red-500 text-xs font-medium ml-1">{errors.stock.message as string}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* BLOQUE 3: MULTIMEDIA */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+          <h2 className="text-lg font-bold text-slate-800 border-b border-gray-50 pb-2">Multimedia</h2>
+          
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-slate-700">Foto del Producto</label>
+            <div className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-colors ${imagenSubida ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+              
+              {imagenSubida ? (
+                <div className="text-center">
+                  <span className="text-4xl block mb-2">✅</span>
+                  <p className="text-sm font-bold text-green-700">¡Imagen subida correctamente!</p>
+                </div>
+              ) : (
+                <UploadButton<OurFileRouter, "imageUploader">
+                  endpoint="imageUploader"
+                  onClientUploadComplete={(res) => {
+                    setValue("image_url", res[0].ufsUrl);
+                    setImagenSubida(res[0].ufsUrl);
+                  }}
+                  onUploadError={(error) => mostrarToast(`Error: ${error.message}`, "error")}
+                  appearance={{
+                    button: "bg-white text-slate-700 border border-gray-200 shadow-sm hover:bg-gray-50 text-sm font-bold px-4 py-2 rounded-lg",
+                    allowedContent: "text-xs text-gray-400 mt-2"
+                  }}
+                />
+              )}
+              
+            </div>
+            <input type="hidden" {...register("image_url", { required: "Obligatorio" })} />
+          </div>
+        </div>
+
+        {/* BOTÓN FINAL */}
+        <div className="pt-4 flex justify-end">
+          <button 
+            type="submit" 
+            className="w-full md:w-auto bg-[#1B4332] text-white py-3 px-8 rounded-xl font-bold text-lg hover:bg-[#143325] shadow-md transition-all active:scale-[0.98]"
+          >
+            Publicar Producto
+          </button>
+        </div>
       </form>
+
+      {/* =========================================================
+          COMPONENTE TOAST (Notificación Flotante)
+      ========================================================= */}
+      {toast.visible && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border animate-in slide-in-from-right-8 fade-in duration-300 ${
+          toast.tipo === "success" 
+            ? "bg-green-50 border-green-200 text-green-800" 
+            : "bg-red-50 border-red-200 text-red-800"
+        }`}>
+          <span className="text-xl">
+            {toast.tipo === "success" ? "✨" : "⚠️"}
+          </span>
+          <p className="font-bold text-sm">{toast.mensaje}</p>
+        </div>
+      )}
+
     </div>
   );
 }
