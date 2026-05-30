@@ -3,26 +3,23 @@ import db from "@/lib/prisma";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  // 1. ACÁ ESTÁ EL CAMBIO PRINCIPAL: Le decimos a TS que espere id_package
+  { params }: { params: Promise<{ id_package: string }> } 
 ) {
   try {
-    const { id } = await params;
+    // 2. Extraemos id_package en lugar de id
+    const { id_package } = await params; 
     const datosRecibidos = await request.json();
-    const apiKey = process.env.SHIPPING_API_KEY;
-    console.log("===============================");
-    console.log("¿QUÉ ESTOY MANDANDO A SHIPPING?");
-    console.log("Llave:", apiKey);
-    console.log("===============================");
 
-    // 1. Hablamos con Shipping desde EL SERVIDOR
-    const resShipping = await fetch(`${process.env.NEXT_PUBLIC_SHIPPING_URL}/api/shippings/${id}/dispatch`, {
+    // 3. Usamos id_package en la URL de Lola
+    const resShipping = await fetch(`${process.env.NEXT_PUBLIC_SHIPPING_URL}/api/shippings/${id_package}/dispatch`, {
       method: "PATCH",
       headers: { 
         "Content-Type": "application/json",
         "x-api-key": process.env.SHIPPING_API_KEY as string 
       },
       body: JSON.stringify({
-        id_package: id, 
+        id_package: id_package, // 4. Mandamos el id_package en el body
         carrier_name: datosRecibidos.carrier_name,
         address_snapshot: datosRecibidos.address_snapshot,
         shipping_cost: datosRecibidos.shipping_cost,
@@ -30,7 +27,6 @@ export async function PATCH(
       })
     });
 
-    // 2. Si la API falla, abortamos antes de tocar nuestra Base de Datos
     if (!resShipping.ok) {
       const errorData = await resShipping.json().catch(() => ({}));
       console.error("Fallo la API de Shipping:", errorData);
@@ -43,9 +39,9 @@ export async function PATCH(
     const dataShipping = await resShipping.json();
     const codigoSeguimiento = dataShipping.id_shipment || dataShipping.id_shipments;
 
-    // 3. Solo si la API respondió OK, actualizamos nuestro estado local
+    // 5. Usamos id_package en nuestra base de datos local
     const paqueteActualizado = await db.paquete.update({
-      where: { id_package: id },
+      where: { id_package: id_package }, 
       data: {
         status: "RETIRADO",
         id_shipments: codigoSeguimiento
@@ -55,7 +51,6 @@ export async function PATCH(
     return NextResponse.json(paqueteActualizado, { status: 200 });
 
   } catch (error) {
-    // Si ocurre un error inesperado (ej: fallo de red), notificamos al vendedor
     console.error("Error crítico en la integración:", error);
     return NextResponse.json(
       { error: "Error de sistema al despachar. Intente nuevamente." }, 
