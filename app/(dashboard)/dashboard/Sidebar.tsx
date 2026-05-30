@@ -69,17 +69,17 @@ export default function Sidebar() {
           Barra superior fija. Oculto en PC.
       ========================================================= */}
       <div className="md:hidden fixed top-0 left-0 w-full h-16 flex items-center px-4 gap-4 z-40">
-  
         <button
           onClick={() => setIsOpen(true)}
+          aria-label="Abrir menú de navegación"
+          aria-expanded={isOpen}
           className="p-2 bg-gray-100 text-[#1B4332] rounded-md focus:outline-none"
         >
           {/* Ícono de Hamburguesa */}
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
         </button>
-        
       </div>
 
       {/* Menú Desplegable que sale al tocar la hamburguesa */}
@@ -89,6 +89,7 @@ export default function Sidebar() {
           <div 
             className="fixed inset-0 bg-black/60" 
             onClick={() => setIsOpen(false)}
+            aria-hidden="true"
           />
           
           {/* Cajón blanco del menú */}
@@ -97,10 +98,11 @@ export default function Sidebar() {
               <h2 className="text-xl font-bold text-[#1B4332] font-manrope">Menú</h2>
               <button 
                 onClick={() => setIsOpen(false)} 
+                aria-label="Cerrar menú"
                 className="p-2 text-gray-500 hover:bg-gray-100 rounded-md"
               >
                 {/* Ícono de X para cerrar */}
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
               </button>

@@ -3,6 +3,7 @@ import db from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import ButtonOrden from "./ButtonOrden";
+import Link from "next/link"; 
 
 export const dynamic = "force-dynamic"; 
 
@@ -32,10 +33,7 @@ export default async function OrdenesPage() {
   });
 
   return (
-    // CAMBIO CLAVE: Sin padding duro ni mx-auto, el Layout padre se encarga de posicionarlo
     <div className="w-full">
-      
-      {/* Título unificado idéntico al de Nuevo Producto */}
       <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 mb-8">
         Mis Órdenes de Compra
       </h1>
@@ -78,8 +76,18 @@ export default async function OrdenesPage() {
                   </div>
                 </div>
 
-                <div className="mt-auto">
+                {/* Contenedor flex para agrupar los botones y el enlace */}
+                <div className="mt-auto flex flex-col gap-4">
                   <ButtonOrden ordenActiva={ordenParaCliente} />
+                  
+                  <div className="flex justify-center border-t border-gray-100 pt-4">
+                    <Link 
+                      href={`/ordenes/${orden.paquetes[0].id_package}`} 
+                      className="text-slate-400 hover:text-[#1B4332] transition-colors font-bold text-sm flex items-center gap-1.5 p-1 px-3 rounded-lg hover:bg-green-50"
+                    >
+                      Ver detalle →
+                    </Link>
+                  </div>
                 </div>
 
               </div>

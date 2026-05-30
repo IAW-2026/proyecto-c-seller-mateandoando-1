@@ -66,22 +66,11 @@ const despacharPaquete = async () => {
       const token = await getToken();
       
       // Le avisamos a Shipping App
-      const responseShipping = await fetch(`${process.env.NEXT_PUBLIC_SHIPPING_URL}/api/shippings/${miPaquete.id_package}/dispatch`, {
-        // Agregamos el método PATCH
-        method: "PATCH", 
-        // Agregamos los headers (Avisando que mandamos un JSON y pasando el token del usuario)
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
-        },
-        // Armamos el body exactamente como lo pide la api
-        body: JSON.stringify({
-          id_package: miPaquete.id_package,
-          carrier_name: miPaquete.carrier_name,
-          address_snapshot: ordenActiva.address_snapshot,
-          shipping_cost: miPaquete.shipping_cost,
-          id_user: ordenActiva.id_buyer
-        })
+      // Solo le pegamos a nuestra propia API interna
+      const responseShipping = await fetch(`/api/packages/${miPaquete.id_package}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(miPaquete) // O el objeto que tenga los datos
       });
 
       if (!responseShipping.ok) throw new Error("Fallo al despachar en Shipping");
