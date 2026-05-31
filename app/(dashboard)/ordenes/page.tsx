@@ -4,15 +4,21 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import ButtonOrden from "./ButtonOrden";
 import Link from "next/link"; 
+import { EstadoPaquete } from ".prisma/client/default.js";
 
 export const dynamic = "force-dynamic"; 
 
-export default async function OrdenesPage() {
+// 1. Recibimos los searchParams por props
+export default async function OrdenesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filtro?: string }>;
+}) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
   const vendedorActual = await db.vendedor.findFirst({
-    where: { clerk_user_id: userId }
+    where: { clerk_user_id: userId },
   });
 
   if (!vendedorActual) {
@@ -25,11 +31,27 @@ export default async function OrdenesPage() {
       </div>
     );
   }
+  // 2. Leemos qué filtro pide la URL
+  const { filtro } = await searchParams;
+  const filtroAplicado = filtro === "PREPARADO" ? EstadoPaquete.PREPARADO : filtro === "ENTREGADO" ? EstadoPaquete.ENTREGADO : filtro === "CANCELADO" ? EstadoPaquete.CANCELADO : filtro === "RETIRADO" ? EstadoPaquete.RETIRADO : undefined;
 
+  // 3. Le pasamos el filtro dinámico a Prisma
   const misOrdenes = await db.ordenCompra.findMany({
-    where: { paquetes: { some: { id_seller: vendedorActual.id_seller } } },
-    include: { paquetes: { where: { id_seller: vendedorActual.id_seller } } },
-    orderBy: { created_at: 'desc' }
+    where: {
+      paquetes: {
+        some: {
+          id_seller: vendedorActual.id_seller,
+          // Si hay filtro, busca solo esas. Si es undefined, ignora esta línea y trae todas.
+          ...(filtroAplicado ? { status: filtroAplicado } : {}), 
+        },
+      },
+    },
+    include: {
+      paquetes: {
+        where: { id_seller: vendedorActual.id_seller },
+      },
+    },
+    orderBy: { created_at: "desc" },
   });
 
   return (
@@ -37,10 +59,52 @@ export default async function OrdenesPage() {
       <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 mb-8">
         Mis Órdenes de Compra
       </h1>
-      
+      {/*Pestañas visuales de navegación */}
+        <div className="flex bg-slate-100 p-1 rounded-lg">
+          <Link
+            href="/ordenes"
+            className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${
+              !filtro ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Todas
+          </Link>
+          <Link
+            href="/ordenes?filtro=PREPARADO"
+            className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${
+              filtro === "PREPARADO" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Pendientes
+          </Link>
+          <Link
+            href="/ordenes?filtro=ENTREGADO"
+            className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${
+              filtro === "ENTREGADO" ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Entregadas
+          </Link>
+          <Link
+            href="/ordenes?filtro=CANCELADO"
+            className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${
+              filtro === "CANCELADO" ? "bg-white text-red-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Canceladas
+          </Link>
+         <Link
+            href="/ordenes?filtro=RETIRADO"
+            className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${
+              filtro === "RETIRADO" ? "bg-white text-yellow-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Retiradas
+          </Link>
+        </div>
       {misOrdenes.length === 0 ? (
         <div className="bg-white p-8 text-center rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-slate-500">Aún no tenés ninguna orden registrada.</p>
+          <p className="text-slate-500">Aún no tenés ninguna orden.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -67,9 +131,21 @@ export default async function OrdenesPage() {
                   </div>
                   
                   <div className="text-right">
-                    <span className="bg-[#e2f4c8] text-[#1B4332] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                    {orden.paquetes[0].status === EstadoPaquete.ENTREGADO
+                    ? <span className="bg-[#e2f4c8] text-[#1B4332] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                       {orden.paquetes[0].status}
                     </span>
+                    : orden.paquetes[0].status === EstadoPaquete.CANCELADO
+                    ? <span className="bg-[#fce8e6] text-[#9b2c2c] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                      {orden.paquetes[0].status}
+                    </span>
+                    : orden.paquetes[0].status === EstadoPaquete.RETIRADO
+                    ? <span className="bg-[#dbeafe] text-[#1e40af] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                      {orden.paquetes[0].status}
+                    </span>
+                    : <span className="bg-[#fef3c7] text-[#92400e] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                      {orden.paquetes[0].status}
+                    </span> }
                     <p className="text-2xl font-bold text-slate-900 mt-2">
                       ${Number(orden.paquetes[0].price_package).toLocaleString('es-AR')}
                     </p>

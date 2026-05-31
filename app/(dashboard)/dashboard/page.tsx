@@ -76,7 +76,8 @@ export default async function DashboardResumenPage() {
             <span className="text-sm font-medium text-slate-400 mb-1">órdenes esperando</span>
           </div>
           <div className="mt-3">
-            <Link href="/ordenes" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline">
+            {/* Atajo modificado con query param */}
+            <Link href="/ordenes?filtro=PREPARADO" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline">
               Ir a gestionar envíos →
             </Link>
           </div>
@@ -91,8 +92,9 @@ export default async function DashboardResumenPage() {
             <Link href="/productos" className="bg-white/10 hover:bg-white/20 transition-colors rounded-xl p-3 text-sm font-semibold text-center backdrop-blur-sm border border-white/5">
               📦 Inventario
             </Link>
-            <Link href="/ordenes" className="bg-white/10 hover:bg-white/20 transition-colors rounded-xl p-3 text-sm font-semibold text-center backdrop-blur-sm border border-white/5">
-              🚚 Envíos
+            {/* Atajo modificado con query param */}
+            <Link href="/ordenes?filtro=PREPARADO" className="flex items-center justify-center w-full h-full bg-white/10 hover:bg-white/20 transition-colors rounded-xl p-3 text-sm font-semibold text-center backdrop-blur-sm border border-white/5">
+              🚚 Envíos Pendientes
             </Link>
           </div>
         </div>
@@ -134,9 +136,17 @@ export default async function DashboardResumenPage() {
                   
                   <div className="flex items-center gap-4">
                     {/* Etiqueta con el nombre real de tu base de datos */}
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${yaSalio ? "bg-green-50 text-green-700 border border-green-200" : "bg-orange-50 text-orange-700 border border-orange-200"}`}>
+                    {<span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide 
+                      ${orden.paquetes[0].status === EstadoPaquete.ENTREGADO
+                        ? "bg-green-50 text-green-700 border-green-200" 
+                        : orden.paquetes[0].status === EstadoPaquete.CANCELADO
+                          ? "bg-red-50 text-red-700 border-red-200"
+                          : orden.paquetes[0].status === EstadoPaquete.RETIRADO
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                      }`}>
                       {orden.paquetes[0].status}
-                    </span>
+                    </span>}
                     <Link href={`/ordenes/${orden.paquetes[0].id_package}`} className="text-slate-400 hover:text-[#1B4332] transition-colors p-2 font-bold text-sm">
                       Ver detalle →
                     </Link>
