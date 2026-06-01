@@ -34,17 +34,17 @@ async function main() {
   console.log('👤 Configurando Vendedor...');
   
   // AHORA: Usá tu correo de prueba local
-  const emailVendedor = 'guadanayla1101@gmail.com'; 
+  //const emailVendedor = 'guadanayla1101@gmail.com'; 
   
   // AHORA: Pegá el ID largo de tu Clerk Development
-  const idClerk = 'user_3DiqOum7deWSCv7RWZxEALa1pkK'; 
+ // const idClerk = 'user_3DiqOum7deWSCv7RWZxEALa1pkK'; 
 
-  const emailVendedor2 = 'guadanayla1101+tomas@gmail.com'; 
-  const idClerk2 = 'user_3Drxbo4Hlqo2sBm6Fu4YQypRInv'; 
+  //const emailVendedor2 = 'guadanayla1101+tomas@gmail.com'; 
+  // const idClerk2 = 'user_3Drxbo4Hlqo2sBm6Fu4YQypRInv'; 
 
-  let vendedorApp2 = await prisma.vendedor.findFirst({ where: { email: emailVendedor2 } });
-  if (!vendedorApp2) {
-    vendedorApp2 = await prisma.vendedor.create({
+  // let vendedorApp2 = await prisma.vendedor.findFirst({ where: { email: emailVendedor2 } });
+  // if (!vendedorApp2) {
+  /*   vendedorApp2 = await prisma.vendedor.create({
       data: {
         email: emailVendedor2,
         clerk_user_id: idClerk2,
@@ -52,10 +52,10 @@ async function main() {
         address: 'Chiclana 500, Bahía Blanca', 
       }
     });
-  }
-  // PARA LA ENTREGA: Comentá las dos líneas de arriba y descomentá estas dos de abajo
-  // const emailVendedor = 'seller+clerktest@iaw.com';
-  // const idClerk = 'user_prod_REEMPLAZAR_POR_ID_REAL';
+  } */
+  
+  const emailVendedor = 'seller+clerk_test@iaw.com';
+  const idClerk = 'user_3EYFA7wDLmgUdEgEgROVBkYqXuI';
 
   let vendedorApp = await prisma.vendedor.findFirst({
     where: { email: emailVendedor } 
@@ -117,7 +117,7 @@ async function main() {
       stock: 8,
       is_active: true,
       id_category: termosCategory.id_category,
-      id_seller: vendedorApp2.id_seller,
+      id_seller: vendedorApp.id_seller,
       image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqaB9K1beyIeC64rzHRPDMNLwapxbclTU7itK2'
     },
     {
@@ -137,7 +137,7 @@ async function main() {
       stock: 20,
       is_active: true,
       id_category: bombillasCategory.id_category,
-      id_seller: vendedorApp2.id_seller,
+      id_seller: vendedorApp.id_seller,
       image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqjftKUii2I2FZTDVnutlW4gq6LXUPaQNEdSkJ'
     },
     {
@@ -147,7 +147,7 @@ async function main() {
       stock: 15,
       is_active: true,
       id_category: yerberasCategory.id_category,
-      id_seller: vendedorApp2.id_seller,
+      id_seller: vendedorApp.id_seller,
       image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqlYTRaAikbUdRgsEyi9WTcrXjaZ40FIBKClw6'
     },
     {
@@ -198,7 +198,7 @@ async function main() {
       stock: 3,
       is_active: true,
       id_category: termosCategory.id_category,
-      id_seller: vendedorApp2.id_seller,
+      id_seller: vendedorApp.id_seller,
       image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqOSNlVC0bKqNzTviyEAuH15rLfD6psXWwGgxd'
     },
     {
@@ -243,13 +243,13 @@ async function main() {
   // ==========================================
   console.log('🛍️ Generando órdenes de compra de prueba...');
 
-  const mateImperialV1 = await prisma.producto.findFirst({ where: { name: 'Mate Imperial Premium - Cuero Negro' } });
-  const termoStanleyV2 = await prisma.producto.findFirst({ where: { name: 'Termo Stanley Classic 1 Litro' } });
+  const mateImperial = await prisma.producto.findFirst({ where: { name: 'Mate Imperial Premium - Cuero Negro' } });
+  const termoStanley = await prisma.producto.findFirst({ where: { name: 'Termo Stanley Classic 1 Litro' } });
 
-  if (mateImperialV1 && termoStanleyV2) {
+  if (mateImperial && termoStanley) {
     // Convertimos los Decimals a números de JS para poder hacer matemática
-    const precioMate = Number(mateImperialV1.price);
-    const precioTermo = Number(termoStanleyV2.price);
+    const precioMate = Number(mateImperial.price);
+    const precioTermo = Number(termoStanley.price);
     //----------Calculos para las ordenes-------------
     const envioOrden1 = 1000;
     const itemsOrden1 = precioMate * 1; 
@@ -280,7 +280,7 @@ async function main() {
             price_package: totalPaquete1, 
             articulos: {
               create: [{
-                id_item: mateImperialV1.id_item, 
+                id_item: mateImperial.id_item, 
                 quantity: 1,
                 sale_price: precioMate 
               }]
@@ -306,7 +306,7 @@ async function main() {
             id_shipments: 'track_and_9999', 
             articulos: {
               create: [{
-                id_item: termoStanleyV2.id_item,
+                id_item: termoStanley.id_item,
                 quantity: 1,
                 sale_price: precioTermo
               }]
@@ -330,8 +330,8 @@ async function main() {
             price_package: totalPaquete3,
             articulos: {
               create: [
-                { id_item: mateImperialV1.id_item, quantity: 1, sale_price: precioMate },
-                { id_item: termoStanleyV2.id_item, quantity: 1, sale_price: precioTermo }
+                { id_item: mateImperial.id_item, quantity: 1, sale_price: precioMate },
+                { id_item: termoStanley.id_item, quantity: 1, sale_price: precioTermo }
               ]
             }
           }]

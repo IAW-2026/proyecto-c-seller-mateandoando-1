@@ -39,7 +39,15 @@ export default function ProductoToggle({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: nuevoEstado }),
       });
-
+      //si se activa un producto sin stock, lo pausamos automáticamente y mostramos un mensaje
+        if (nuevoEstado && response.ok) {
+          const data = await response.json();
+          if (data.stock <= 0) {
+            setActivo(false);
+            mostrarToast("No se puede activar un producto sin stock. Por favor, actualiza el stock antes de activarlo.", "error");
+            return;
+          }
+        }
       if (!response.ok) throw new Error("Fallo al actualizar el estado del producto");
       router.refresh();
       mostrarToast(`Producto ${nuevoEstado ? "activado" : "pausado"} con éxito`);

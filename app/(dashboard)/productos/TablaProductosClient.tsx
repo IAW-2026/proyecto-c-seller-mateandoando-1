@@ -166,7 +166,7 @@ export default function TablaProductosClient({ productosIniciales, currentPage, 
                                 <td className="py-4 px-4">
                                     <input 
                                         type="checkbox" 
-                                        disabled={!prod.is_active} // <-- DESHABILITA SI ESTÁ PAUSADO
+                                        disabled={!prod.is_active || prod.stock <= 0} // <-- DESHABILITA SI ESTÁ PAUSADO O SIN STOCK
                                         checked={seleccionados.includes(prod.id_item)} 
                                         onChange={() => toggleSeleccion(prod.id_item)} 
                                         className="w-4 h-4 rounded border-gray-300 text-[#1B4332] focus:ring-[#1B4332] disabled:cursor-not-allowed" 
@@ -197,7 +197,7 @@ export default function TablaProductosClient({ productosIniciales, currentPage, 
                                     </span>
                                 </td>
                                 <td className="py-4 px-4">
-                                    <ProductoToggle productoId={prod.id_item} estadoInicial={prod.is_active} />
+                                    <ProductoToggle productoId={prod.id_item} estadoInicial={prod.is_active && prod.stock > 0} />
                                 </td>
                                 <td className="py-4 px-4 text-right">
                                     
@@ -252,7 +252,7 @@ export default function TablaProductosClient({ productosIniciales, currentPage, 
 
                         {/* Parte inferior: Estado y Stock */}
                         <div className="mt-4 pt-3 border-t border-gray-50 flex justify-between items-center">
-                            <ProductoToggle productoId={prod.id_item} estadoInicial={prod.is_active} />
+                            <ProductoToggle productoId={prod.id_item} estadoInicial={prod.is_active && prod.stock > 0} />
                             
                             <span className={`px-2 py-1 rounded-md text-xs font-bold ${prod.stock > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                                 Stock: {prod.stock}

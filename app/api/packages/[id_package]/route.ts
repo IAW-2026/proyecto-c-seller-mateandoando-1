@@ -1,3 +1,4 @@
+//app/api/packages/[id_package]/route.ts
 import { NextResponse } from "next/server";
 import db from "@/lib/prisma";
 
@@ -10,7 +11,9 @@ export async function PATCH(
     // 2. Extraemos id_package en lugar de id
     const { id_package } = await params; 
     const datosRecibidos = await request.json();
-
+    console.log("SHIPPING_URL:", process.env.SHIPPING_URL);
+    console.log("NEXT_PUBLIC_SHIPPING_URL:", process.env.NEXT_PUBLIC_SHIPPING_URL);
+    console.log("SHIPPING_API_KEY:", process.env.SHIPPING_API_KEY ? "✅ presente" : "❌ undefined");
     // 3. Usamos id_package en la URL de Lola
     const resShipping = await fetch(`${process.env.NEXT_PUBLIC_SHIPPING_URL}/api/shippings/${id_package}/dispatch`, {
       method: "PATCH",
