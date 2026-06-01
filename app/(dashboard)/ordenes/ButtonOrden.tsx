@@ -17,6 +17,7 @@ export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
   // Extraemos nuestro paquete específico de adentro de la orden
   const miPaquete = ordenActiva.paquetes[0];
   const esCancelado = miPaquete.status === "CANCELADO";
+  const esPreparado = miPaquete.status === "PREPARADO";
   
   const consultarComprador = async () => {
     setCargandoBuyer(true);
@@ -127,30 +128,21 @@ const despacharPaquete = async () => {
         </span>
       </button>
 
-      {ordenActiva.paquetes[0].status === "PREPARADO" ? (
-          <button 
-          onClick={despacharPaquete}
-          disabled={cargandoDespacho}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-orange-100 bg-orange-50 hover:bg-orange-100 text-orange-700 transition-colors disabled:opacity-50"
-        >
-          <span className="text-xl">📦</span>
-          <span className="font-semibold text-sm">
-            {cargandoDespacho ? "Avisando..." : "Despachar Paquete"}
-          </span>
-        </button>
-        ) : (
-        <Link 
-          href={`/ordenes/${ordenActiva.paquetes[0].id_package}`} 
-          className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 transition-colors text-center ${
-            esCancelado 
-              ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100" 
-              : "border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-          }`}
-        >
-          <span className="text-xl">{esCancelado ? "🚫" : "📦"}</span>
-          <span className="font-semibold text-sm">Detalle del Paquete</span>
-        </Link>
-      )}
+      <Link 
+        href={`/ordenes/${ordenActiva.paquetes[0].id_package}`} 
+        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 transition-colors text-center w-full ${
+          esCancelado 
+            ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100" 
+            : esPreparado
+            ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+            : "border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+        }`}
+      >
+        <span className="text-xl">
+          {esCancelado ? "🚫" : esPreparado ? "⏳" : "📦"}
+        </span>
+        <span className="font-semibold text-sm">Detalle del Paquete</span>
+      </Link>
     </div>
   );
 }
