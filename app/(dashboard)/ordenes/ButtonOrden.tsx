@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import Link from "next/dist/client/link";
 
 export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
   const { getToken } = useAuth();
@@ -15,7 +16,8 @@ export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
 
   // Extraemos nuestro paquete específico de adentro de la orden
   const miPaquete = ordenActiva.paquetes[0];
-
+  const esCancelado = miPaquete.status === "CANCELADO";
+  
   const consultarComprador = async () => {
     setCargandoBuyer(true);
     try {
@@ -125,18 +127,8 @@ const despacharPaquete = async () => {
         </span>
       </button>
 
-      {ordenActiva.paquetes[0].id_shipments ? (
-        <a 
-          href={`${process.env.NEXT_PUBLIC_SHIPPING_URL}/tracking/${ordenActiva.paquetes[0].id_shipments}`} 
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-blue-100 bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors text-center"
-        >
-          <span className="text-xl">🚚</span>
-          <span className="font-semibold text-sm">Seguir Envío</span>
-        </a>
-      ) : (
-        <button 
+      {ordenActiva.paquetes[0].status === "PREPARADO" ? (
+          <button 
           onClick={despacharPaquete}
           disabled={cargandoDespacho}
           className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-orange-100 bg-orange-50 hover:bg-orange-100 text-orange-700 transition-colors disabled:opacity-50"
@@ -146,6 +138,18 @@ const despacharPaquete = async () => {
             {cargandoDespacho ? "Avisando..." : "Despachar Paquete"}
           </span>
         </button>
+        ) : (
+        <Link 
+          href={`/ordenes/${ordenActiva.paquetes[0].id_package}`} 
+          className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 transition-colors text-center ${
+            esCancelado 
+              ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100" 
+              : "border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          }`}
+        >
+          <span className="text-xl">{esCancelado ? "🚫" : "📦"}</span>
+          <span className="font-semibold text-sm">Detalle del Paquete</span>
+        </Link>
       )}
     </div>
   );

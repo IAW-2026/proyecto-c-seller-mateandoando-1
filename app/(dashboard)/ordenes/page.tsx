@@ -155,15 +155,6 @@ export default async function OrdenesPage({
                 {/* Contenedor flex para agrupar los botones y el enlace */}
                 <div className="mt-auto flex flex-col gap-4">
                   <ButtonOrden ordenActiva={ordenParaCliente} />
-                  
-                  <div className="flex justify-center border-t border-gray-100 pt-4">
-                    <Link 
-                      href={`/ordenes/${orden.paquetes[0].id_package}`} 
-                      className="text-slate-400 hover:text-[#1B4332] transition-colors font-bold text-sm flex items-center gap-1.5 p-1 px-3 rounded-lg hover:bg-green-50"
-                    >
-                      Ver detalle →
-                    </Link>
-                  </div>
                 </div>
 
               </div>
