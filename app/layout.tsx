@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-// 1. VOLVEMOS A IMPORTAR CLERK
 import { ClerkProvider } from '@clerk/nextjs' 
 import "./globals.css";
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,10 +17,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // 2. ENVOLVEMOS TODO CON EL PROVIDER DE CLERK
     <ClerkProvider> 
       <html lang="es">
-        <body className={`${inter.className} antialiased text-slate-800 bg-[#F9F7F2]`}>
+        <body> 
+          <Toaster richColors position="bottom-right" />
           {children}
         </body>
       </html>

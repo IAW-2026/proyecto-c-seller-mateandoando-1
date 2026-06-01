@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import db from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export async function PATCH(
   request: Request,
@@ -28,7 +29,10 @@ export async function PATCH(
     if (!orden) {
       return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
     }
-
+    // Invalidamos la caché de las páginas que muestran órdenes
+      revalidatePath("/dashboard");
+      revalidatePath("/ordenes");
+      
     const paqueteEnTransito = orden.paquetes.some(
       (p) => p.status === "RETIRADO" || p.status === "ENTREGADO"
     );

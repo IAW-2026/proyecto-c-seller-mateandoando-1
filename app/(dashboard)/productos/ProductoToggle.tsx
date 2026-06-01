@@ -15,11 +15,19 @@ export default function ProductoToggle({
   const [cargando, setCargando] = useState(false);
   const router = useRouter();
 
-  // ACÁ ESTÁ EL USEEFFECT: Sincroniza el botón de PC con el del Celular
+  // Sincroniza el botón de PC con el del Celular
   useEffect(() => {
     setActivo(estadoInicial);
   }, [estadoInicial]);
+ const [toast, setToast] = useState({ visible: false, mensaje: "", tipo: "success" });
 
+  const mostrarToast = (mensaje: string, tipo: "success" | "error" = "success") => {
+    setToast({ visible: true, mensaje, tipo });
+    // Desaparece automáticamente a los 3.5 segundos
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, visible: false }));
+    }, 3500);
+  };
   const toggleEstado = async () => {
     setCargando(true);
     const nuevoEstado = !activo;
@@ -32,12 +40,12 @@ export default function ProductoToggle({
         body: JSON.stringify({ is_active: nuevoEstado }),
       });
 
-      if (!response.ok) throw new Error("Fallo al actualizar");
+      if (!response.ok) throw new Error("Fallo al actualizar el estado del producto");
       router.refresh();
-      
+      mostrarToast(`Producto ${nuevoEstado ? "activado" : "pausado"} con éxito`);
     } catch (error) {
       setActivo(!nuevoEstado);
-      alert("Hubo un error al cambiar el estado del producto.");
+      mostrarToast("Hubo un error al cambiar el estado del producto.", "error");
     } finally {
       setCargando(false);
     }
@@ -63,6 +71,21 @@ export default function ProductoToggle({
       <span className={`text-xs font-bold tracking-wide ${activo ? "text-[#1B4332]" : "text-slate-400"}`}>
         {activo ? "Activo" : "Pausado"}
       </span>
+      {/* =========================================================
+          COMPONENTE TOAST (Notificación Flotante)
+      ========================================================= */}
+      {toast.visible && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border animate-in slide-in-from-right-8 fade-in duration-300 ${
+          toast.tipo === "success" 
+            ? "bg-green-50 border-green-200 text-green-800" 
+            : "bg-red-50 border-red-200 text-red-800"
+        }`}>
+          <span className="text-xl">
+            {toast.tipo === "success" ? "✨" : "⚠️"}
+          </span>
+          <p className="font-bold text-sm">{toast.mensaje}</p>
+        </div>
+      )}
     </div>
   );
 }

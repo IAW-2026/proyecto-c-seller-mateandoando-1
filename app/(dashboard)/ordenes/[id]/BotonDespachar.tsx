@@ -1,8 +1,9 @@
-//app/(dashboard)/ordenes/[id]/BotonDespachar.tsx
+// app/(dashboard)/ordenes/[id]/BotonDespachar.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner"; 
 
 export default function BotonDespachar({ datosDespacho }: { datosDespacho: any }) {
   const [procesando, setProcesando] = useState(false);
@@ -12,11 +13,9 @@ export default function BotonDespachar({ datosDespacho }: { datosDespacho: any }
     setProcesando(true);
     
     try {
-      // Le pegamos a TU ruta interna y le mandamos TODOS los datos
       const resLocal = await fetch(`/api/packages/${datosDespacho.id_package}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        // ACÁ ESTÁ EL CAMBIO: Mandamos el paquetito de datos completo
         body: JSON.stringify(datosDespacho) 
       });
 
@@ -25,12 +24,11 @@ export default function BotonDespachar({ datosDespacho }: { datosDespacho: any }
         throw new Error(errorData.error || "Error desconocido al actualizar la BD");
       }
 
-      // Si todo salió bien, recargamos la página para ver el progreso verde
       router.refresh();
-
+      toast.success("¡Despacho iniciado con éxito!"); 
     } catch (error) {
       console.error("Error:", error);
-      alert("Hubo un error. Revisá la consola.");
+      toast.error("Hubo un error. Revisá la consola."); 
     } finally {
       setProcesando(false);
     }

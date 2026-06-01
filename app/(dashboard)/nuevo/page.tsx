@@ -13,7 +13,7 @@ interface Categoria {
 }
 
 export default function NuevoProductoPage() {
-  // 1. CAMBIO CLAVE: Agregamos mode: "onBlur" para validar al salir del input
+  // Agregamos mode: "onBlur" para validar al salir del input
   const { register, handleSubmit, setValue, getValues, formState: { errors }, reset } = useForm({
     mode: "onBlur" 
   });
@@ -23,7 +23,7 @@ export default function NuevoProductoPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [imagenSubida, setImagenSubida] = useState<string | null>(null);
 
-  // 2. ESTADO DEL TOAST (Notificación emergente)
+  // ESTADO DEL TOAST (Notificación emergente)
   const [toast, setToast] = useState({ visible: false, mensaje: "", tipo: "success" });
 
   const mostrarToast = (mensaje: string, tipo: "success" | "error" = "success") => {
@@ -59,10 +59,10 @@ export default function NuevoProductoPage() {
       
       if (!response.ok) throw new Error("Falló la conexión con el servidor");
       
-      // 3. MOSTRAMOS EL TOAST DE ÉXITO EN VEZ DEL ALERT
+      // MOSTRAMOS EL TOAST DE ÉXITO 
       mostrarToast("¡Producto publicado con éxito!");
       
-      // Opcional: Limpiamos el formulario para que pueda cargar otro
+      // Limpiamos el formulario para que pueda cargar otro
       reset();
       setImagenSubida(null);
 

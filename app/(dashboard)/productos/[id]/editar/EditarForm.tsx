@@ -66,7 +66,37 @@ export default function EditarForm({ producto }: { producto: any }) {
     }
   };
 
-  const handleGenerarIA = async () => { /* ... (Acá va la misma lógica de IA que ya tenés en NuevoProductoPage) ... */ };
+   const handleGenerarIA = async () => {
+    setIsGenerating(true);
+    try {
+      const nombreIngresado = getValues("name");
+      const idCategoriaIngresada = getValues("id_category");
+
+      if (!nombreIngresado) {
+        mostrarToast("Escribí el nombre del producto primero", "error");
+        setIsGenerating(false);
+        return;
+      }
+
+      const response = await fetch("/api/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          nombre: nombreIngresado, 
+          categoria: categorias.find(c => c.id_category === idCategoriaIngresada)?.name || "General" 
+        }),
+      });
+
+      if (!response.ok) throw new Error("Fallo al conectar con IA");
+      const data = await response.json();
+      setValue("description", data.description, { shouldValidate: true });
+      mostrarToast("¡Descripción generada!");
+    } catch (error) {
+      mostrarToast("No se pudo generar la descripción", "error");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <>
@@ -92,8 +122,23 @@ export default function EditarForm({ producto }: { producto: any }) {
             </div>
           </div>
           <div className="flex flex-col gap-1.5 mt-2">
-            <label className="text-sm font-semibold text-slate-700">Descripción</label>
-            <textarea rows={4} {...register("description", { required: "Obligatorio" })} className={`w-full p-3 rounded-xl border shadow-sm focus:ring-2 outline-none resize-none ${errors.description ? 'border-red-400' : 'border-gray-200 focus:border-[#1B4332]'}`} />
+            <div className="flex justify-between items-end mb-1">
+              <label className="text-sm font-semibold text-slate-700">Descripción</label>
+              <button 
+                type="button" 
+                onClick={handleGenerarIA}
+                disabled={isGenerating}
+                className="text-xs flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-bold transition-colors disabled:opacity-50"
+              >
+                {isGenerating ? "Generando..." : "✨ Autocompletar con IA"}
+              </button>
+            </div>
+            <textarea 
+              placeholder="Detalla las características de tu producto..."
+              rows={4}
+              {...register("description", { required: "Obligatorio" })} 
+              className={`w-full p-3 rounded-xl border shadow-sm focus:ring-2 outline-none resize-none transition-all ${errors.description ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-[#1B4332] focus:ring-[#1B4332]/20'}`}
+            />
           </div>
         </div>
 

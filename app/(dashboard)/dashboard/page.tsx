@@ -38,7 +38,7 @@ export default async function DashboardResumenPage() {
       <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">
-            ¡Hola de nuevo! 👋
+            ¡Hola de nuevo! 
           </h1>
           <p className="text-slate-500 mt-2 text-lg">
             Acá tenés el resumen de tu tienda al día de hoy.
