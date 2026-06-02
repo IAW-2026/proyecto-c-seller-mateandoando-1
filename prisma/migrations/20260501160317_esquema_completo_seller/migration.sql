@@ -22,7 +22,7 @@ CREATE TABLE "Producto" (
     "stock" INTEGER NOT NULL DEFAULT 0,
     "id_seller" TEXT NOT NULL,
     "id_category" TEXT NOT NULL,
-
+    "image_url" TEXT,
     CONSTRAINT "Producto_pkey" PRIMARY KEY ("id_item")
 );
 

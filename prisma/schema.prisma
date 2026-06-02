@@ -22,6 +22,7 @@ enum EstadoPaquete {
   PREPARADO
   RETIRADO
   ENTREGADO
+  CANCELADO
 }
 
 // 1. Tabla Vendedores
@@ -54,7 +55,8 @@ model Producto {
   price          Decimal
   discount_price Decimal? // Opcional, ya que solo aplica si hay promoción
   stock          Int      @default(0)
-
+  image_url      String
+  is_active   Boolean  @default(true) //interruptor
   // Relaciones
   id_seller   String
   vendedor    Vendedor  @relation(fields: [id_seller], references: [id_seller])
@@ -74,7 +76,8 @@ model OrdenCompra {
   id_payment_operation String?     // Opcional al inicio, lo provee Payments App luego
   status               EstadoOrden @default(CREADA)
   created_at           DateTime    @default(now())
-
+  address_snapshot     String      @default("Chiclana 100, Bahia Blanca")// Captura la dirección inmutable a donde debe llegar el pedido
+  zip_code             Int         @default(8000)
   paquetes Paquete[]
 }
 
@@ -83,8 +86,10 @@ model Paquete {
   id_package        String        @id @default(uuid())
   id_seller_app     String
   price_package     Decimal
-  status            EstadoPaquete @default(PREPARADO)
-
+  status            EstadoPaquete @default(PREPARADO)    
+  carrier_name      String        @default("Correo Argentino")
+  shipping_cost     Decimal       @default(1000)
+  id_shipments      String?
   // Relaciones
   id_purchase_order String
   ordenCompra       OrdenCompra   @relation(fields: [id_purchase_order], references: [id_purchase_order])

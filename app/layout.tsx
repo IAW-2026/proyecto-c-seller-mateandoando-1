@@ -1,36 +1,29 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from '@clerk/nextjs';
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css"; 
+import { Inter } from "next/font/google";
+import { ClerkProvider } from '@clerk/nextjs' 
+import "./globals.css";
+import { Toaster } from 'sonner';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MateandoAndo Seller",
-  description: "Gestión de inventario para vendedores",
+  title: "Seller App - Mateando Ando",
+  description: "Panel de gestión para vendedores",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          {}
+    <ClerkProvider> 
+      <html lang="es">
+        <body> 
+          <Toaster richColors position="bottom-right" />
           {children}
         </body>
       </html>
     </ClerkProvider>
-  )
+  );
 }
