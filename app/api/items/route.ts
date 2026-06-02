@@ -14,7 +14,17 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    const vendedorActual = await db.vendedor.findFirst({
+      where: { clerk_user_id: id_seller }
+    });
 
+    // Validamos por seguridad que el vendedor exista en nuestra BDD
+    if (!vendedorActual) {
+      return NextResponse.json(
+        { error: "El usuario no está registrado como vendedor" },
+        { status: 404 }
+      );
+    }
     // Usamos db.producto (según tu esquema)
     const nuevoProducto = await db.producto.create({
       data: {
@@ -23,7 +33,7 @@ export async function POST(request: Request) {
         price,
         stock: stock || 0,
         id_category, // Referencia al id_category de tu modelo Categoria
-        id_seller,   // Referencia al id_seller de tu modelo Vendedor
+        id_seller: vendedorActual.id_seller,   // Referencia al id_seller de tu modelo Vendedor
         image_url: image_url || null, // Guardamos la URL si viene en la petición
       },
     });
