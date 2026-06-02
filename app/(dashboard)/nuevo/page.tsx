@@ -50,7 +50,12 @@ export default function NuevoProductoPage() {
   }, []);
 
   const onSubmit = async (data: any) => {
-    const payloadCompleto = { ...data, id_seller: "seller123" };
+    if (!user) {
+      mostrarToast("Error: No estás logueado", "error");
+      return;
+    }
+    const payloadCompleto = { ...data, id_seller: user.id };
+
     try {
       const response = await fetch("/api/items", {
         method: "POST",
