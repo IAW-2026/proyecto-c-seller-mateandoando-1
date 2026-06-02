@@ -245,11 +245,12 @@ async function main() {
 
   const mateImperial = await prisma.producto.findFirst({ where: { name: 'Mate Imperial Premium - Cuero Negro' } });
   const termoStanley = await prisma.producto.findFirst({ where: { name: 'Termo Stanley Classic 1 Litro' } });
-
-  if (mateImperial && termoStanley) {
+  const yerbera = await prisma.producto.findFirst({ where: { name: 'Yerbera de Cerámica - 1kg' } });
+  if (mateImperial && termoStanley && yerbera) {
     // Convertimos los Decimals a números de JS para poder hacer matemática
     const precioMate = Number(mateImperial.price);
     const precioTermo = Number(termoStanley.price);
+    const precioYerbera = Number(yerbera.price);
     //----------Calculos para las ordenes-------------
     const envioOrden1 = 1000;
     const itemsOrden1 = precioMate * 1; 
@@ -262,6 +263,10 @@ async function main() {
     const envioOrden3 = 1500;
     const itemsOrden3 = (precioMate * 1) + (precioTermo * 1); 
     const totalPaquete3 = itemsOrden3 + envioOrden3; 
+
+    const envioOrden4 = 5000;
+    const itemsOrden4 = (precioMate * 1) + (precioTermo * 1) + (precioYerbera * 1);
+    const totalPaquete4 = itemsOrden4 + envioOrden4;
     //-----------------------------------------------------------------
     const ordenesPrueba = [
       {
@@ -333,6 +338,31 @@ async function main() {
                 { id_item: mateImperial.id_item, quantity: 1, sale_price: precioMate },
                 { id_item: termoStanley.id_item, quantity: 1, sale_price: precioTermo }
               ]
+            }
+          }]
+        }
+      },
+      {
+        id_purchase_order: 'ORD-TEST-004',
+        id_buyer: 'buyer_test_555',
+        id_buyer_app: 'app_buyer_iaw',
+        total_price: totalPaquete4,
+        status: EstadoOrden.PAGADA,
+        id_payment_operation: 'mp_test_345678',
+        paquetes: {
+          create: [{
+            id_seller_app: 'app_seller_iaw',
+            id_seller: vendedorApp.id_seller,
+            status: EstadoPaquete.RETIRADO,
+            id_shipments: 'track_and_8888',
+            shipping_cost: envioOrden4,
+            price_package: totalPaquete4,
+            articulos: {
+              create: [{
+                id_item: mateImperial.id_item,
+                quantity: 1,
+                sale_price: precioMate
+              }]
             }
           }]
         }
