@@ -1,7 +1,7 @@
 # MateandoAndo - Seller App
 
 ### Link al deploy de producción
-[https://tu-enlace-final-de-vercel.vercel.app](https://tu-enlace-final-de-vercel.vercel.app)
+[https://tu-enlace-final-de-vercel.vercel.app] (https://mateandoando-seller-app.vercel.app/))
 
 ### Usuarios disponibles para pruebas
 * **Rol Vendedor:**
