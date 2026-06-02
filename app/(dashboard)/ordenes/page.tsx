@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import ButtonOrden from "./ButtonOrden";
 import Link from "next/link"; 
 import { EstadoPaquete } from ".prisma/client/default.js";
+import GridOrdenesPaginado from "./GridOrdenesPaginado";
 
 export const dynamic = "force-dynamic"; 
 
@@ -53,7 +54,15 @@ export default async function OrdenesPage({
     },
     orderBy: { created_at: "desc" },
   });
-
+  const ordenesFormateadas = misOrdenes.map((orden) => ({
+    ...orden,
+    total_price: Number(orden.total_price),
+    paquetes: orden.paquetes.map(paquete => ({
+      ...paquete,
+      price_package: Number(paquete.price_package),
+      shipping_cost: Number(paquete.shipping_cost)
+    }))
+  }));
   return (
     <div className="w-full">
       <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 mb-8">
@@ -102,66 +111,7 @@ export default async function OrdenesPage({
             Retiradas
           </Link>
         </div>
-      {misOrdenes.length === 0 ? (
-        <div className="bg-white p-8 text-center rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-slate-500">Aún no tenés ninguna orden.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {misOrdenes.map((orden) => {
-            const ordenParaCliente = {
-              ...orden,
-              total_price: Number(orden.total_price),
-              paquetes: orden.paquetes.map(paquete => ({
-                ...paquete,
-                price_package: Number(paquete.price_package),
-                shipping_cost: Number(paquete.shipping_cost)
-              }))
-            };
-
-            return (
-              <div key={orden.id_purchase_order} className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-6 border border-gray-100 flex flex-col h-full">
-                
-                <div className="flex justify-between items-start mb-6 border-b border-gray-50 pb-4">
-                  <div>
-                    <span className="inline-block bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-md mb-2 tracking-wide">
-                      ORDEN #{orden.id_purchase_order.slice(-6).toUpperCase()}
-                    </span>
-                    <p className="text-sm text-slate-500 mt-1">Paquete: {orden.paquetes[0].id_package.slice(-6)}</p>
-                  </div>
-                  
-                  <div className="text-right">
-                    {orden.paquetes[0].status === EstadoPaquete.ENTREGADO
-                    ? <span className="bg-[#e2f4c8] text-[#1B4332] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                      {orden.paquetes[0].status}
-                    </span>
-                    : orden.paquetes[0].status === EstadoPaquete.CANCELADO
-                    ? <span className="bg-[#fce8e6] text-[#9b2c2c] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                      {orden.paquetes[0].status}
-                    </span>
-                    : orden.paquetes[0].status === EstadoPaquete.RETIRADO
-                    ? <span className="bg-[#dbeafe] text-[#1e40af] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                      {orden.paquetes[0].status}
-                    </span>
-                    : <span className="bg-[#fef3c7] text-[#92400e] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                      {orden.paquetes[0].status}
-                    </span> }
-                    <p className="text-2xl font-bold text-slate-900 mt-2">
-                      ${Number(orden.paquetes[0].price_package).toLocaleString('es-AR')}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Contenedor flex para agrupar los botones y el enlace */}
-                <div className="mt-auto flex flex-col gap-4">
-                  <ButtonOrden ordenActiva={ordenParaCliente} />
-                </div>
-
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <GridOrdenesPaginado misOrdenes={ordenesFormateadas} />
     </div>
   );
 }

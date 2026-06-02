@@ -5,6 +5,7 @@ import { useState} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProductoToggle from "./ProductoToggle";
+import {Pencil, X, BadgePercent} from "lucide-react";
 
 export default function TablaProductosClient({ productosIniciales, currentPage, totalPages }: any) {
     const router = useRouter();
@@ -100,14 +101,14 @@ export default function TablaProductosClient({ productosIniciales, currentPage, 
                                     disabled={procesando}
                                     className="bg-red-50 text-red-700 px-4 py-2 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors border border-red-100 flex-1 md:flex-none"
                                 >
-                                    ❌ Quitar Descuento ({seleccionados.length})
+                                    <X size={16} className="mr-2" /> Quitar Descuento ({seleccionados.length})
                                 </button>
                             )}
                             <button 
                                 onClick={() => setShowModal(true)}
                                 className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl font-bold text-sm hover:bg-indigo-100 transition-colors border border-indigo-100 flex-1 md:flex-none"
                             >
-                                🏷️ Descuento ({seleccionados.length})
+                                <BadgePercent size={16} className="mr-2" /> Descuento ({seleccionados.length})
                             </button>
                         </div>
                     )}
@@ -202,7 +203,7 @@ export default function TablaProductosClient({ productosIniciales, currentPage, 
                                 <td className="py-4 px-4 text-right">
                                     
                                     <Link href={`/productos/${prod.id_item}/editar`} className="text-slate-400 hover:text-indigo-600 transition-colors p-2 inline-block" title="Modificar">
-                                        ✏️
+                                        <Pencil size={16} />
                                     </Link>
                                 </td>
                             </tr>
@@ -234,7 +235,7 @@ export default function TablaProductosClient({ productosIniciales, currentPage, 
                                 <div className="flex justify-between items-start">
                                     <h3 className="font-bold text-slate-900 leading-tight truncate pr-2">{prod.name}</h3>
                                     <Link href={`/productos/${prod.id_item}/editar`} className="text-slate-400 hover:text-indigo-600 shrink-0 p-1">
-                                        ✏️
+                                        <Pencil size={16} />
                                     </Link>
                                 </div>
                                 <div className="mt-2 flex flex-wrap justify-between items-center gap-2">

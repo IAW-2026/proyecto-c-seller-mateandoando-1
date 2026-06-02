@@ -102,7 +102,7 @@ export async function POST(request: Request) {
         0
       );
 
-      // --- 2. NUEVO: SUMAR EL ENVÍO AL PAQUETE ---
+      
       // El precio del paquete es Productos + Envío
       const precioPackageRaw = sumaProductos + shippingCost;
       const precioPackage = Number(precioPackageRaw.toFixed(2)); 
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
       include: { paquetes: true },
     });
 
-    // --- 3. NUEVO: ACTUALIZACIÓN DE RESPUESTA ---
+    //-------------------------------------------
     const response = {
       id_purchase_order: nuevaOrden.id_purchase_order,
       total_price: Number(nuevaOrden.total_price),

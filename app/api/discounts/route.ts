@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // CORRECCIÓN: Leemos exactamente el nombre que manda el contrato
+    // Leemos exactamente el nombre que manda el contrato
     const { min_discount_percentage } = body;
 
     // Validación actualizada

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {Sparkles, TriangleAlert} from "lucide-react";
 
 export default function ProductoToggle({ 
   productoId, 
@@ -89,7 +90,7 @@ export default function ProductoToggle({
             : "bg-red-50 border-red-200 text-red-800"
         }`}>
           <span className="text-xl">
-            {toast.tipo === "success" ? "✨" : "⚠️"}
+            {toast.tipo === "success" ? <Sparkles size={24} /> : <TriangleAlert size={24} />}
           </span>
           <p className="font-bold text-sm">{toast.mensaje}</p>
         </div>

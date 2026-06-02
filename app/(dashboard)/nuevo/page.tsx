@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import {Sparkles, TriangleAlert, CircleCheckBig} from "lucide-react";
 
 interface Categoria {
   id_category: string;
@@ -153,7 +154,7 @@ export default function NuevoProductoPage() {
                 disabled={isGenerating}
                 className="text-xs flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-bold transition-colors disabled:opacity-50"
               >
-                {isGenerating ? "Generando..." : "✨ Autocompletar con IA"}
+                {isGenerating ? "Generando..." : <Sparkles size={16} /> + " Autocompletar con IA"}
               </button>
             </div>
             <textarea 
@@ -218,7 +219,7 @@ export default function NuevoProductoPage() {
               
               {imagenSubida ? (
                 <div className="text-center">
-                  <span className="text-4xl block mb-2">✅</span>
+                  <span className="text-4xl block mb-2"><CircleCheckBig size={24} className="text-green-500" /></span>
                   <p className="text-sm font-bold text-green-700">¡Imagen subida correctamente!</p>
                 </div>
               ) : (
@@ -262,7 +263,7 @@ export default function NuevoProductoPage() {
             : "bg-red-50 border-red-200 text-red-800"
         }`}>
           <span className="text-xl">
-            {toast.tipo === "success" ? "✨" : "⚠️"}
+            {toast.tipo === "success" ? <Sparkles size={24} /> : <TriangleAlert size={24} />}
           </span>
           <p className="font-bold text-sm">{toast.mensaje}</p>
         </div>

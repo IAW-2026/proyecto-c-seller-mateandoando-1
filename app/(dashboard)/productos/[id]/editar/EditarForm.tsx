@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import {Sparkles, TriangleAlert} from "lucide-react";
 
 export default function EditarForm({ producto }: { producto: any }) {
   const router = useRouter();
@@ -130,7 +131,7 @@ export default function EditarForm({ producto }: { producto: any }) {
                 disabled={isGenerating}
                 className="text-xs flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-bold transition-colors disabled:opacity-50"
               >
-                {isGenerating ? "Generando..." : "✨ Autocompletar con IA"}
+                {isGenerating ? "Generando..." : <Sparkles size={16} /> + " Autocompletar con IA"}
               </button>
             </div>
             <textarea 
@@ -197,7 +198,7 @@ export default function EditarForm({ producto }: { producto: any }) {
       {/* TOAST DE NOTIFICACIÓN */}
       {toast.visible && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border animate-in slide-in-from-right-8 fade-in duration-300 ${toast.tipo === "success" ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}>
-          <span className="text-xl">{toast.tipo === "success" ? "✨" : "⚠️"}</span>
+          <span className="text-xl">{toast.tipo === "success" ? <Sparkles size={24} /> : <TriangleAlert size={24} />}</span>
           <p className="font-bold text-sm">{toast.mensaje}</p>
         </div>
       )}

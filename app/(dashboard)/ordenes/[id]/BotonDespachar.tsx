@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner"; 
+import { Hourglass, Rocket } from "lucide-react";
 
 export default function BotonDespachar({ datosDespacho }: { datosDespacho: any }) {
   const [procesando, setProcesando] = useState(false);
@@ -40,7 +41,8 @@ export default function BotonDespachar({ datosDespacho }: { datosDespacho: any }
       disabled={procesando}
       className={`w-full bg-[#1B4332] text-white py-3 px-4 rounded-xl font-bold text-sm hover:bg-[#143325] shadow-md transition-all flex items-center justify-center gap-2 ${procesando ? 'opacity-50 cursor-wait' : 'active:scale-[0.98]'}`}
     >
-      {procesando ? "⏳ Procesando..." : "🚀 Iniciar Despacho"}
+      {procesando ? <Hourglass size={24} /> : <Rocket size={24} />}
+      {procesando ? "Iniciando..." : "Despachar Paquete"}
     </button>
   );
 }

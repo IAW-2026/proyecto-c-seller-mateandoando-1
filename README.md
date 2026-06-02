@@ -5,7 +5,7 @@
 
 ### Usuarios disponibles para pruebas
 * **Rol Vendedor:**
-  * **Email:** `seller+clerktest@iaw.com`
+  * **Email:** `seller+clerk_test@iaw.com`
   * **Contraseña:** `iawuser#`
 
 ### Instrucciones para evaluar la aplicación

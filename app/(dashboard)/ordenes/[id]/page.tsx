@@ -5,6 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { EstadoPaquete } from "@prisma/client";
 import BotonDespachar from "./BotonDespachar";
+import {Package, Truck, House} from "lucide-react";
 
 export default async function DetallePaquetePage(props: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
@@ -36,9 +37,9 @@ export default async function DetallePaquetePage(props: { params: Promise<{ id: 
   const totalPaquete = subtotalProductos + costoEnvio;
 
   const pasos = [
-    { estado: EstadoPaquete.PREPARADO, etiqueta: "Preparado", icono: "📦" },
-    { estado: EstadoPaquete.RETIRADO, etiqueta: "En Camino", icono: "🚚" },
-    { estado: EstadoPaquete.ENTREGADO, etiqueta: "Entregado", icono: "🏠" },
+    { estado: EstadoPaquete.PREPARADO, etiqueta: "Preparado", icono: <Package size={24} /> },
+    { estado: EstadoPaquete.RETIRADO, etiqueta: "En Camino", icono: <Truck size={24} /> },
+    { estado: EstadoPaquete.ENTREGADO, etiqueta: "Entregado", icono: <House size={24} /> },
   ];
 
   const indiceActual = pasos.findIndex((p) => p.estado === paquete.status);
@@ -74,8 +75,8 @@ export default async function DetallePaquetePage(props: { params: Promise<{ id: 
             : paquete.status === EstadoPaquete.CANCELADO 
             ? "bg-red-50 text-red-700 border-red-200"
             : paquete.status === EstadoPaquete.RETIRADO
-            ? "bg-blue-50 text-blue-700 border-blue-200"
-            : "bg-yellow-50 text-yellow-700 border-yellow-200"
+            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+            : "bg-blue-50 text-blue-700 border-blue-200"
         }`}>
           {paquete.status}
         </span>
