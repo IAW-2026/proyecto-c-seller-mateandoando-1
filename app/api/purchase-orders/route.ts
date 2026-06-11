@@ -41,7 +41,7 @@ export async function POST(request: Request) {
           "X-API-Key": shippingApiKey 
         },
         //  Usamos la key exacta de la api
-        body: JSON.stringify({ destination_zip_code: zip_code.toString() })
+        body: JSON.stringify({ destination_zip_code: Number(zip_code) })
       });
 
       if (!shippingResponse.ok) {
