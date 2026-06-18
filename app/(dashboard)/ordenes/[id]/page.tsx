@@ -5,6 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { EstadoPaquete } from "@prisma/client";
 import BotonDespachar from "./BotonDespachar";
+import BotonDetallePago from "./BotonDetallePago";
 import {Package, Truck, House} from "lucide-react";
 
 export default async function DetallePaquetePage(props: { params: Promise<{ id: string }> }) {
@@ -185,12 +186,12 @@ export default async function DetallePaquetePage(props: { params: Promise<{ id: 
                 <span className="font-bold text-slate-800">Total Neto</span>
                 <span className="text-xl font-black text-[#1B4332]">${totalPaquete.toLocaleString('es-AR')}</span>
               </div>
+              <BotonDetallePago idPaymentOperation={paquete.ordenCompra.id_payment_operation} />
             </div>
           </div>
 
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col gap-3">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Acciones Disponibles</h4>
-            
             {paquete.status === EstadoPaquete.PREPARADO ? (
               <BotonDespachar datosDespacho={datosParaDespachar} />
             ) : (

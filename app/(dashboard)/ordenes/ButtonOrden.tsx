@@ -1,19 +1,16 @@
 //app/(dashboard)/ordenes/ButtonOrden.tsx
-//va a recibir la orden real que le mandó el servidor para hacer las consultas
-
 "use client";
 
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import Link from "next/dist/client/link";
-import {User, CreditCard, Ban, Package, House, Truck} from "lucide-react";
+import Link from "next/link"; // Corregida la ruta de importación de Link
+import { User, CreditCard, Ban, Package, House, Truck } from "lucide-react";
 
 export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
   const { getToken } = useAuth();
   
   const [cargandoBuyer, setCargandoBuyer] = useState(false);
   const [cargandoPago, setCargandoPago] = useState(false);
-  const [cargandoDespacho, setCargandoDespacho] = useState(false);
 
   // Extraemos nuestro paquete específico de adentro de la orden
   const miPaquete = ordenActiva.paquetes[0];
@@ -24,6 +21,7 @@ export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
   const consultarComprador = async () => {
     setCargandoBuyer(true);
     try {
+      // Dejamos esto tal cual está hasta que Gonzalo te pase la API Key o destrabe el CORS/Clerk
       const token = await getToken();
       const response = await fetch(`${process.env.NEXT_PUBLIC_BUYER_URL}/api/buyers/${ordenActiva.id_buyer}`, {
         method: "GET",
@@ -49,60 +47,16 @@ export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
         return;
       }
 
-      const token = await getToken();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_PAYMENTS_URL}/api/payments/transactions/${ordenActiva.id_payment_operation}`, {
-        method: "GET",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      // Le pegamos a NUESTRA API interna para proteger la API Key
+      const response = await fetch(`/api/payments/${ordenActiva.id_payment_operation}`);
 
       if (!response.ok) throw new Error("Fallo al consultar pago");
       const data = await response.json();
-      alert(`Estado del pago: ${data.status}\nFecha: ${data.created_at}`);
+      alert(`Estado del pago: ${data.status}\nFecha de creación: ${new Date(data.created_at).toLocaleDateString()}`);
     } catch (error) {
-      alert("Error conectando con la Payments App.");
+      alert("Error conectando con nuestro servidor interno de pagos.");
     } finally {
       setCargandoPago(false);
-    }
-  };
-
-const despacharPaquete = async () => {
-    setCargandoDespacho(true);
-    try {
-      const token = await getToken();
-      
-      // Le avisamos a Shipping App
-      // Solo le pegamos a nuestra propia API interna
-      const responseShipping = await fetch(`/api/packages/${miPaquete.id_package}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(miPaquete) // O el objeto que tenga los datos
-      });
-
-      if (!responseShipping.ok) throw new Error("Fallo al despachar en Shipping");
-      
-      const dataShipping = await responseShipping.json();
-      const trackingCode = dataShipping.id_shipments; 
-
-      // Le avisamos a NUESTRA propia base de datos
-      const responseLocal = await fetch(`/api/packages/${miPaquete.id_package}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "DESPACHADO",
-          id_shipments: trackingCode 
-        })
-      });
-
-      if (!responseLocal.ok) throw new Error("Fallo al guardar en nuestra base de datos");
-
-      alert(`¡Éxito! Paquete despachado. Seguimiento: ${trackingCode}`);
-      window.location.reload(); // la página se refresca sola al terminar
-      
-    } catch (error) {
-      console.error(error); 
-      alert("Error conectando con la logística.");
-    } finally {
-      setCargandoDespacho(false);
     }
   };
 
