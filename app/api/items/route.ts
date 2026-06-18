@@ -63,16 +63,29 @@ export async function GET() {
     });
 
     // Mapeo para cumplir con el contrato 03-apis.md (id_item)
-    const formattedItems = productos.map((item) => ({
-      id_item: item.id_item, // Usamos el nombre del campo ID de tu esquema
+    const formattedItems = productos.map((item) => {
+     // 1. Convertimos los Decimal de Prisma a Number para poder hacer matemática
+      const priceNum = Number(item.price);
+      const discountPriceNum = item.discount_price ? Number(item.discount_price) : null;
+      
+      // 2. Calculamos el porcentaje (si tiene precio de descuento y es menor al original)
+      let discount_percentage = 0;
+      if (discountPriceNum && discountPriceNum < priceNum) {
+        discount_percentage = Math.round(((priceNum - discountPriceNum) / priceNum) * 100);
+      }
+    return {
+       id_item: item.id_item, // Usamos el nombre del campo ID de tu esquema
       name: item.name,
       price: item.price,
       image_url: item.image_url, // Lo incluimos para que la Buyer App pueda mostrar la foto
       id_category: item.id_category,
+      category_name: item.categoria.name,
       id_seller: item.id_seller,
-    }));
-
-    return NextResponse.json(formattedItems);
+      seller_name: item.vendedor.name,
+      discount_percentage: discount_percentage
+    };
+  });
+  return NextResponse.json(formattedItems);
 
   } catch (error) {
     console.error("Error obteniendo los productos:", error);
