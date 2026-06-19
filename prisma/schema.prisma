@@ -19,6 +19,7 @@ enum EstadoOrden {
 }
 
 enum EstadoPaquete {
+  PENDIENTE
   PREPARADO
   RETIRADO
   ENTREGADO

@@ -23,8 +23,8 @@ export default async function DashboardResumenPage() {
     db.producto.count({ where: { id_seller: vendedorActual.id_seller } }),
     db.producto.count({ where: { id_seller: vendedorActual.id_seller,OR:[ {is_active: false},{stock: 0}]} }),
     db.ordenCompra.findMany({
-      where: { paquetes: { some: { id_seller: vendedorActual.id_seller } } },
-      include: { paquetes: { where: { id_seller: vendedorActual.id_seller } } },
+      where: { paquetes: { some: { id_seller: vendedorActual.id_seller, status: { not: EstadoPaquete.PENDIENTE } } } },
+      include: { paquetes: { where: { id_seller: vendedorActual.id_seller , status: { not: EstadoPaquete.PENDIENTE } } } },
       orderBy: { created_at: 'desc' }
     })
   ]);
