@@ -96,14 +96,16 @@ export async function POST(request: Request) {
     let totalPrice = 0;
 
     for (const [id_seller, items_grupo] of productosMap) {
-      // Calculamos solo el costo de los productos
-      const sumaProductos = items_grupo.reduce<number>(
-        (sum, item) => sum + Number(item.producto.price) * item.quantity,
-        0
-      );
+      const sumaProductos = items_grupo.reduce<number>((sum, item) => {
+        const precioLista = Number(item.producto.price);
+        // Si hay un precio de descuento, lo usamos. Si no, precio normal.
+        const precioVentaFinal = item.producto.discount_price ? Number(item.producto.discount_price) : precioLista;
+        
+        return sum + (precioVentaFinal * item.quantity);
+      }, 0);
 
       
-      // El precio del paquete es Productos + Envío
+      // El precio del paquete es Productos (con descuento) + Envío
       const precioPackageRaw = sumaProductos + shippingCost;
       const precioPackage = Number(precioPackageRaw.toFixed(2)); 
       totalPrice += precioPackage;
@@ -115,11 +117,16 @@ export async function POST(request: Request) {
         carrier_name: carrierName,   // Guardamos el correo
         vendedor: { connect: { id_seller: id_seller } }, 
         articulos: {
-          create: items_grupo.map((item) => ({
-            quantity: item.quantity,
-            sale_price: item.producto.price,
-            producto: { connect: { id_item: item.producto.id_item } },
-          })),
+          create: items_grupo.map((item) => {
+            // Calcular el precio unitario con descuento para guardarlo en la tabla intermedia
+            const precioLista = Number(item.producto.price);
+            const precioVentaFinal = item.producto.discount_price ? Number(item.producto.discount_price) : precioLista;
+            return {
+              quantity: item.quantity,
+              sale_price: Number(precioVentaFinal.toFixed(2)), // Guardamos el precio promocional exacto en la BD
+              producto: { connect: { id_item: item.producto.id_item } },
+            };
+          }),
         },
       });
       // ------------------------------------------
@@ -129,7 +136,7 @@ export async function POST(request: Request) {
       data: {
         id_buyer,
         id_buyer_app: id_buyer_app || "buyer-app-default", 
-        total_price: totalPrice,
+        total_price: Number(totalPrice.toFixed(2)),
         status: "CREADA",
         zip_code,
         address_snapshot,

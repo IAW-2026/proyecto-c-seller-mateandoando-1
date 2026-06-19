@@ -21,23 +21,25 @@ export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
   const consultarComprador = async () => {
     setCargandoBuyer(true);
     try {
-      // Dejamos esto tal cual está hasta que Gonzalo te pase la API Key o destrabe el CORS/Clerk
-      const token = await getToken();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BUYER_URL}/api/buyers/${ordenActiva.id_buyer}`, {
+      // Simplemente llamamos a nuestro propio backend:
+      const response = await fetch(`/api/buyers/${ordenActiva.id_buyer}`, {
         method: "GET",
-        headers: { "Authorization": `Bearer ${token}` }
+        // Eliminamos el header de Authorization
+        headers: { "Content-Type": "application/json" } 
       });
 
-      if (!response.ok) throw new Error("Fallo al traer al comprador");
+      if (!response.ok) throw new Error("Fallo al traer al comprador desde nuestro proxy");
+      
       const data = await response.json();
+      
       alert(`Datos del comprador:\nNombre: ${data.first_name} ${data.last_name}\nTeléfono: ${data.phone}`);
     } catch (error) {
-      alert("Error conectando con la Buyer App.");
+      console.error(error);
+      alert("Error conectando con la Buyer App a través de nuestro servidor.");
     } finally {
       setCargandoBuyer(false);
     }
   };
-
   const consultarPago = async () => {
     setCargandoPago(true);
     try {
