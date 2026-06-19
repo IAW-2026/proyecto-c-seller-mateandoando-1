@@ -16,6 +16,15 @@ export async function GET(
   { params }: RouteParams // 2. Recibimos las params como segundo argumento
 ) {
   try {
+    const apiKey = request.headers.get("x-api-key");
+    const validApiKey = process.env.BUYER_API_KEY;
+
+    if (!apiKey || apiKey !== validApiKey) {
+      return NextResponse.json(
+        { error: "No autorizado. Se requiere una API Key válida del Seller." },
+        { status: 401 }
+      );
+    }
     const {id_seller } = await params;
 
     if (!id_seller) {

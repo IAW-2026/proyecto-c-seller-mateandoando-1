@@ -193,7 +193,9 @@ export default async function DetallePaquetePage(props: { params: Promise<{ id: 
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col gap-3">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Acciones Disponibles</h4>
             {paquete.status === EstadoPaquete.PREPARADO ? (
-              <BotonDespachar datosDespacho={datosParaDespachar} />
+              <BotonDespachar datosDespacho={datosParaDespachar}
+              idPaymentOperation={paquete.ordenCompra.id_payment_operation}
+               />
             ) : (
               <p className="text-xs font-medium text-slate-500 bg-white p-3 rounded-xl border border-gray-100 text-center shadow-sm">
                 Este paquete ya ha sido procesado y no requiere acciones adicionales.
