@@ -2,7 +2,7 @@
 import db from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-import type { Producto, Vendedor, EstadoOrden, EstadoPaquete} from "@prisma/client";
+import { Producto, Vendedor, EstadoOrden, EstadoPaquete} from "@prisma/client";
 
 type ItemGroup = {
   producto: Producto & { vendedor: Vendedor };
@@ -115,6 +115,7 @@ export async function POST(request: Request) {
         price_package: precioPackage,
         shipping_cost: shippingCost, // Guardamos el costo logístico
         carrier_name: carrierName,   // Guardamos el correo
+        status: EstadoPaquete.PENDIENTE,
         vendedor: { connect: { id_seller: id_seller } }, 
         articulos: {
           create: items_grupo.map((item) => {

@@ -35,13 +35,16 @@ export async function PATCH(
       revalidatePath("/ordenes");
 
     if (status === "APROBADO") {
-      await db.ordenCompra.update({
-        where: { id_purchase_order },
-        data: { 
-          status: "PAGADA", 
-          id_payment_operation: id_payment_operation 
-        }
-      });
+      await db.$transaction([
+        db.ordenCompra.update({
+          where: { id_purchase_order: id_purchase_order },
+          data: { status: "PAGADA" }
+        }),
+        db.paquete.updateMany({
+          where: { id_purchase_order: id_purchase_order },
+          data: { status: "PREPARADO" } 
+        })
+      ]);
       
       return NextResponse.json({
         id_purchase_order: id_purchase_order,
