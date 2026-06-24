@@ -27,12 +27,20 @@ export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
         // Eliminamos el header de Authorization
         headers: { "Content-Type": "application/json" } 
       });
-
+      if (response.status === 404) {
+        alert("Atención: El comprador de esta orden ya no existe en el sistema (cuenta eliminada o datos de prueba antiguos).");
+        return; // Cortamos la función acá para que no intente leer el JSON
+      }
       if (!response.ok) throw new Error("Fallo al traer al comprador desde nuestro proxy");
       
       const data = await response.json();
+      console.log("NUEVO JSON DE GONZALO:", data);
+      const nombreCompleto = `${data.first_name} ${data.last_name}`.trim() || "Usuario anónimo (Datos incompletos)";
       
-      alert(`Datos del comprador:\nNombre: ${data.first_name} ${data.last_name}\nTeléfono: ${data.phone}`);
+      // Agarramos el teléfono (o avisamos que no lo cargó)
+      const telefono = data.phone || "No registró número";
+
+      alert(`Datos del comprador:\nNombre: ${nombreCompleto}\nTeléfono: ${data.phone}\nEstado: ${data.status}`);
     } catch (error) {
       console.error(error);
       alert("Error conectando con la Buyer App a través de nuestro servidor.");

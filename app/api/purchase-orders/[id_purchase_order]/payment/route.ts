@@ -20,6 +20,10 @@ export async function PATCH(
 
     const { id_purchase_order } = await params;
     const body = await request.json();
+    console.log("====================================");
+    console.log("¡WEBHOOK DISPARADO DESDE PAYMENTS!");
+    console.log("Datos crudos recibidos:", body);
+    console.log("====================================");
     const { status, id_payment_operation } = body;
 
     const orden = await db.ordenCompra.findUnique({
@@ -38,7 +42,9 @@ export async function PATCH(
       await db.$transaction([
         db.ordenCompra.update({
           where: { id_purchase_order: id_purchase_order },
-          data: { status: "PAGADA" }
+          data: { status: "PAGADA",
+            id_payment_operation: body.id_payment_operation
+           }
         }),
         db.paquete.updateMany({
           where: { id_purchase_order: id_purchase_order },
@@ -54,24 +60,26 @@ export async function PATCH(
     }
 
     if (status === "RECHAZADO") {
-      await db.ordenCompra.update({
-        where: { id_purchase_order },
-        data: { status: "CANCELADA" }
-      });
+      await db.$transaction(async (tx) => {
+       await tx.ordenCompra.update({
+          where: { id_purchase_order },
+          data: { status: "CANCELADA" }
+        });
 
-      await db.paquete.updateMany({
-        where: { id_purchase_order },
-        data: { status: "CANCELADO" }
-      });
+        await tx.paquete.updateMany({
+          where: { id_purchase_order },
+          data: { status: "CANCELADO" }
+        });
 
-      for (const paquete of orden.paquetes) {
-        for (const articulo of paquete.articulos) {
-          await db.producto.update({
-            where: { id_item: articulo.id_item },
-            data: { stock: { increment: articulo.quantity } }
-          });
+        for (const paquete of orden.paquetes) {
+          for (const articulo of paquete.articulos) {
+            await tx.producto.update({
+              where: { id_item: articulo.id_item },
+              data: { stock: { increment: articulo.quantity } }
+            });
+          }
         }
-      }
+      });
 
       return NextResponse.json({
         id_purchase_order: id_purchase_order,
