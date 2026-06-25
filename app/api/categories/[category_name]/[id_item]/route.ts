@@ -42,6 +42,7 @@ export async function GET(
           },
         },
         id_item: id_item, // Filtramos por el id_item específico
+        isActive: true  
       },
       include: {  
         categoria: true,
