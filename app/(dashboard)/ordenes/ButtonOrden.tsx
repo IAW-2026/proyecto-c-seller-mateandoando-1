@@ -5,12 +5,12 @@ import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link"; // Corregida la ruta de importación de Link
 import { User, CreditCard, Ban, Package, House, Truck } from "lucide-react";
+import BotonDetallePago from "./[id]/BotonDetallePago";
+import BotonDetalleComprador from "./ButtonDetalleComprador";
 
 export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
   const { getToken } = useAuth();
   
-  const [cargandoBuyer, setCargandoBuyer] = useState(false);
-  const [cargandoPago, setCargandoPago] = useState(false);
 
   // Extraemos nuestro paquete específico de adentro de la orden
   const miPaquete = ordenActiva.paquetes[0];
@@ -18,89 +18,31 @@ export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
   const esPreparado = miPaquete.status === "PREPARADO";
   const esEntregado = miPaquete.status === "ENTREGADO";
 
-  const consultarComprador = async () => {
-    setCargandoBuyer(true);
-    try {
-      // Simplemente llamamos a nuestro propio backend:
-      const response = await fetch(`/api/buyers/${ordenActiva.id_buyer}`, {
-        method: "GET",
-        // Eliminamos el header de Authorization
-        headers: { "Content-Type": "application/json" } 
-      });
-      if (response.status === 404) {
-        alert("Atención: El comprador de esta orden ya no existe en el sistema (cuenta eliminada o datos de prueba antiguos).");
-        return; // Cortamos la función acá para que no intente leer el JSON
-      }
-      if (!response.ok) throw new Error("Fallo al traer al comprador desde nuestro proxy");
-      
-      const data = await response.json();
-      console.log("NUEVO JSON DE GONZALO:", data);
-      const nombreCompleto = `${data.first_name} ${data.last_name}`.trim() || "Usuario anónimo (Datos incompletos)";
-      
-      // Agarramos el teléfono (o avisamos que no lo cargó)
-      const telefono = data.phone || "No registró número";
-
-      alert(`Datos del comprador:\nNombre: ${nombreCompleto}\nTeléfono: ${data.phone}\nEstado: ${data.status}`);
-    } catch (error) {
-      console.error(error);
-      alert("Error conectando con la Buyer App a través de nuestro servidor.");
-    } finally {
-      setCargandoBuyer(false);
-    }
-  };
-  const consultarPago = async () => {
-    setCargandoPago(true);
-    try {
-      // Si la Payments App todavía no asignó un ID de operación, avisamos
-      if (!ordenActiva.id_payment_operation) {
-        alert("El comprador todavía no inició el proceso de pago.");
-        return;
-      }
-
-      // Le pegamos a NUESTRA API interna para proteger la API Key
-      const response = await fetch(`/api/payments/${ordenActiva.id_payment_operation}`);
-
-      if (response.status === 404) {
-        alert("El pago no se encontró en el servidor de Payments. Es posible que sea un registro de prueba antiguo.");
-        return; 
-      }
-
-      // 3. Si falla por otra cosa
-      if (!response.ok) {
-        throw new Error("Fallo al traer el pago desde nuestro proxy");
-      }
-      const data = await response.json();
-      alert(`Estado del pago: ${data.status}\nFecha de creación: ${new Date(data.created_at).toLocaleDateString()}`);
-    } catch (error) {
-      alert("Error conectando con nuestro servidor interno de pagos.");
-    } finally {
-      setCargandoPago(false);
-    }
-  };
-
+ 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-      <button 
-        onClick={consultarComprador}
-        disabled={cargandoBuyer}
-        className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-blue-100 bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors disabled:opacity-50"
+      <BotonDetalleComprador 
+        idBuyer={ordenActiva.id_buyer}
+        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 transition-colors w-full ${
+          ordenActiva.id_buyer 
+            ? "border-blue-100 bg-blue-50 hover:bg-blue-100 text-blue-700" 
+            : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500" 
+        }`}
       >
         <User size={24} />
-        <span className="font-semibold text-sm">
-          {cargandoBuyer ? "Consultando..." : "Ver Comprador"}
-        </span>
-      </button>
+        <span className="font-semibold text-sm">Ver Comprador</span>
+      </BotonDetalleComprador>
 
-      <button 
-        onClick={consultarPago}
-        disabled={cargandoPago}
-        className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-purple-100 bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors disabled:opacity-50"
-      >
-        <CreditCard size={24} />
-        <span className="font-semibold text-sm">
-          {cargandoPago ? "Verificando..." : "Consultar Pago"}
-        </span>
-      </button>
+      <BotonDetallePago 
+        idPaymentOperation={ordenActiva.id_payment_operation}
+        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 transition-colors w-full ${
+          ordenActiva.id_payment_operation 
+            ? "border-purple-100 bg-purple-50 hover:bg-purple-100 text-purple-700" 
+            : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500" // Se pone grisáceo si falta el pago
+        }`}      >
+        <CreditCard size={24} /> 
+        <span className="font-semibold text-sm">Detalles del Pago</span>
+      </BotonDetallePago>
 
       <Link 
         href={`/ordenes/${ordenActiva.paquetes[0].id_package}`} 

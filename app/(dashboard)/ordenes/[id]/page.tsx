@@ -6,7 +6,7 @@ import Link from "next/link";
 import { EstadoPaquete } from "@prisma/client";
 import BotonDespachar from "./BotonDespachar";
 import BotonDetallePago from "./BotonDetallePago";
-import {Package, Truck, House} from "lucide-react";
+import {Package, Truck, House, CreditCard} from "lucide-react";
 
 export default async function DetallePaquetePage(props: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
@@ -186,7 +186,17 @@ export default async function DetallePaquetePage(props: { params: Promise<{ id: 
                 <span className="font-bold text-slate-800">Total Neto</span>
                 <span className="text-xl font-black text-[#1B4332]">${totalPaquete.toLocaleString('es-AR')}</span>
               </div>
-              <BotonDetallePago idPaymentOperation={paquete.ordenCompra.id_payment_operation} />
+              <BotonDetallePago 
+                idPaymentOperation={paquete.ordenCompra.id_payment_operation}
+                className={`flex items-center justify-center gap-2 w-full mt-4 py-2.5 text-sm font-bold text-black bg-white hover:bg-slate-100 border border-black rounded-xl transition-colors disabled:opacity-50 ${
+                  !paquete.ordenCompra.id_payment_operation
+                  ? "border-black-100 bg-black-50 hover:bg-black-100 text-black-700" 
+                  : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500" // Se pone grisáceo si falta el pago
+                }`}
+              >
+                <CreditCard size={18} className="text-black" />
+                Detalles del Pago
+              </BotonDetallePago>
             </div>
           </div>
 
