@@ -9,14 +9,14 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('🌱 Iniciando la carga de datos (Seed)...');
+  console.log('🌱 Iniciando la carga de datos (Solo inserciones nuevas)...');
 
   // ==========================================
-  // 1. CARGAR CATEGORÍAS (De forma segura)
+  // 1. CARGAR CATEGORÍAS
   // ==========================================
-  console.log('📦 Cargando categorías...');
+  console.log('📦 Revisando categorías...');
   const categoriasNombres = ['mates', 'termos', 'bombillas', 'yerberas', 'canastas', 'combos'];
-  const categoriasMap = new Map(); // Para guardar los IDs y usarlos en los productos
+  const categoriasMap = new Map(); 
   
   for (const nombre of categoriasNombres) {
     let categoria = await prisma.categoria.findFirst({ where: { name: nombre } });
@@ -29,58 +29,60 @@ async function main() {
   }
 
   // ==========================================
-  // 2. CREAR VENDEDOR
+  // 2. CREAR MÚLTIPLES VENDEDORES
   // ==========================================
-  console.log('👤 Configurando Vendedor...');
+  console.log('👥 Revisando Vendedores...');
   
-  // AHORA: Usá tu correo de prueba local
-  //const emailVendedor = 'guadanayla1101@gmail.com'; 
-  
-  // AHORA: Pegá el ID largo de tu Clerk Development
- // const idClerk = 'user_3DiqOum7deWSCv7RWZxEALa1pkK'; 
+  const vendedoresData = [
+    {
+      email: 'seller+clerk_test@iaw.com',
+      clerk_user_id: 'user_3EYFA7wDLmgUdEgEgROVBkYqXuI', 
+      name: 'Usuario Vendedor',
+      address: 'Calle Falsa 123, Ciudad',
+      sales_made: 0,
+      rating: 0
+    },
+    {
+      email: 'ventasartesaniassur@iaw.com',
+      clerk_user_id: 'user_3Fdq7snbj5DxxzfA4csyvC5BaRD', 
+      name: 'Artesanías Sur',
+      address: 'Av. Alem 1253, Bahía Blanca',
+      sales_made: 45,
+      rating: 4.8
+    },
+    {
+      email: 'contactoelrey@iaw.com',
+      clerk_user_id: 'user_3FdqCmVcrmUxtYF00N8Nz4RUGnf', 
+      name: 'El Rey del Termo',
+      address: 'Chiclana 500, Bahía Blanca',
+      sales_made: 120,
+      rating: 4.5
+    }
+  ];
 
-  //const emailVendedor2 = 'guadanayla1101+tomas@gmail.com'; 
-  // const idClerk2 = 'user_3Drxbo4Hlqo2sBm6Fu4YQypRInv'; 
+  const vendedoresMap = new Map();
 
-  // let vendedorApp2 = await prisma.vendedor.findFirst({ where: { email: emailVendedor2 } });
-  // if (!vendedorApp2) {
-  /*   vendedorApp2 = await prisma.vendedor.create({
-      data: {
-        email: emailVendedor2,
-        clerk_user_id: idClerk2,
-        name: 'El Rey del Termo',
-        address: 'Chiclana 500, Bahía Blanca', 
-      }
+  for (const vData of vendedoresData) {
+    let vendedor = await prisma.vendedor.findFirst({
+      where: { email: vData.email } 
     });
-  } */
-  
-  const emailVendedor = 'seller+clerk_test@iaw.com';
-  const idClerk = 'user_3EYFA7wDLmgUdEgEgROVBkYqXuI';
 
-  let vendedorApp = await prisma.vendedor.findFirst({
-    where: { email: emailVendedor } 
-  });
-
-  if (!vendedorApp) {
-    vendedorApp = await prisma.vendedor.create({
-      data: {
-        email: emailVendedor,
-        clerk_user_id: idClerk, 
-        name: 'Usuario Vendedor',
-        address: 'Calle Falsa 123, Ciudad',
-        sales_made: 0,
-        rating: 0
-      }
-    });
-    console.log(`  ➕ Vendedor creado con ID: ${vendedorApp.id_seller}`);
-  } else {
-    console.log('  ✔️ El Vendedor ya existe.');
+    if (!vendedor) {
+      vendedor = await prisma.vendedor.create({ data: vData });
+      console.log(`  ➕ Vendedor creado: ${vendedor.name}`);
+    } else {
+      // SOLO INFORMA, NO ACTUALIZA
+      console.log(`  ✔️ Vendedor ya existe: ${vendedor.name} (Omitiendo)`);
+    }
+    vendedoresMap.set(vendedor.name, vendedor);
   }
+
+  const vendedorApp = vendedoresMap.get('Usuario Vendedor');
 
   // ==========================================
   // 3. CARGAR PRODUCTOS DEL CATÁLOGO
   // ==========================================
-  console.log('🧉 Cargando productos al catálogo...');
+  console.log('🧉 Revisando productos del catálogo...');
   
   const matesCategory = categoriasMap.get('mates');
   const termosCategory = categoriasMap.get('termos');
@@ -90,6 +92,7 @@ async function main() {
   const combosCategory = categoriasMap.get('combos');
 
   const productosSemilla = [
+    // --- PRODUCTOS DEL VENDEDOR 1 ---
     {
       name: 'Mate Imperial Premium - Cuero Negro',
       description: 'Mate de calabaza forrado en cuero vacuno negro con virola de alpargata cincelada a mano.',
@@ -99,16 +102,6 @@ async function main() {
       id_category: matesCategory.id_category, 
       id_seller: vendedorApp.id_seller,
       image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqwmnXnUq1RjT53iFgvlp6efUzSc9qnNKsyubt'
-    },
-    {
-      name: 'Mate Torpedo - Marrón Clásico',
-      description: 'Mate torpedo uruguayo de calabaza gruesa, virola lisa de acero inoxidable.',
-      price: 32000,
-      stock: 5,
-      is_active: true,
-      id_category: matesCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqVymONo45ykavKJ2UcTYh9ZwuWjrDR4oEztx6'
     },
     {
       name: 'Termo Stanley Classic 1 Litro',
@@ -121,97 +114,6 @@ async function main() {
       image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqaB9K1beyIeC64rzHRPDMNLwapxbclTU7itK2'
     },
     {
-      name: 'Termo Media Manija 1L - Acero',
-      description: 'Termo de acero inoxidable con pico cebador de precisión. Ideal para viajes.',
-      price: 45000,
-      stock: 0, // Ponemos uno sin stock para que el profe vea cómo se maneja en tu app
-      is_active: true,
-      id_category: termosCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqTIM0pMtLimNWlcd0Dv95CPUspZtbwfEOHoyG'
-    },
-    {
-      name: 'Bombilla Pico de Loro - Acero Inoxidable',
-      description: 'Bombilla de acero inoxidable con filtro tipo pico de loro, ideal para evitar que pasen restos de yerba.',
-      price: 3500,
-      stock: 20,
-      is_active: true,
-      id_category: bombillasCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqjftKUii2I2FZTDVnutlW4gq6LXUPaQNEdSkJ'
-    },
-    {
-      name: 'Yerbera de Madera - 500g',
-      description: 'Yerbera de madera maciza con tapa hermética, capacidad para 500 gramos de yerba.',
-      price: 2500,
-      stock: 15,
-      is_active: true,
-      id_category: yerberasCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqlYTRaAikbUdRgsEyi9WTcrXjaZ40FIBKClw6'
-    },
-    {
-      name: 'Canasta Matera Completa',
-      description: 'Canasta de mimbre con mate, termo, bombilla y yerbera. El regalo perfecto para los amantes del mate.',
-      price: 15000,
-      stock: 5,
-      is_active: true,
-      id_category: canastasCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqMOOXlI4yGUKND3ZcipVyFtQuXhSLs9mfa5YT'
-    },
-    {
-      name: 'Combo Mate y Termo - Descuento Especial',
-      description: 'Combo que incluye un mate imperial premium y un termo media manija con un 15% de descuento.',
-      price: 90000,
-      discount_price:76500,
-      stock: 3,
-      is_active: true,
-      id_category: combosCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriq67fGCIkeElavomAwVb2Lr6xOijQMStJYygsH'
-    },
-    {
-      name: 'Combo Bombilla y Yerbera - Oferta',
-      description: 'Combo con bombilla pico de loro y yerbera de madera a un precio especial.',
-      price: 5000,
-      stock: 10,
-      is_active: true,
-      id_category: combosCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriq5zjH7LDVt1SxAXiJZ4NlFBRQCI8jdqsH7akT'
-    },
-    {
-      name: 'Mate de Vidrio con Funda - Edición Limitada',
-      description: 'Mate de vidrio resistente con funda de neopreno, ideal para llevar tu mate a todas partes.',
-      price: 40000,
-      stock: 5,
-      is_active: true,
-      id_category: matesCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqXmSO1kiuQMuaYgpfB6S0RDGtFTbe9xrnKkCv'
-    },
-    {
-      name: 'Termo Eléctrico Portátil - 1 Litro',
-      description: 'Termo eléctrico portátil que calienta el agua en minutos, perfecto para viajes o la oficina.',
-      price: 120000,
-      stock: 3,
-      is_active: true,
-      id_category: termosCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqOSNlVC0bKqNzTviyEAuH15rLfD6psXWwGgxd'
-    },
-    {
-      name: 'Bombilla de Alpaca - Diseño Exclusivo',
-      description: 'Bombilla de alpaca con diseño exclusivo y filtro de malla fina, ideal para un mate suave.',
-      price: 8000,
-      stock: 10,
-      is_active: true,
-      id_category: bombillasCategory.id_category,
-      id_seller: vendedorApp.id_seller,
-      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqTun52AtLimNWlcd0Dv95CPUspZtbwfEOHoyG'
-    },
-    {
       name: 'Yerbera de Cerámica - 1kg',
       description: 'Yerbera de cerámica con tapa hermética, capacidad para 1 kilogramo de yerba.',
       price: 4000,
@@ -220,6 +122,81 @@ async function main() {
       id_category: yerberasCategory.id_category,
       id_seller: vendedorApp.id_seller,
       image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqYDe4pScF4z9jZwr2UYDnNlRouSJvV3QsmcgB'
+    },
+    {
+      name: 'Termo Media Manija 1L - Acero',
+      description: 'Termo de acero inoxidable con pico cebador de precisión. Ideal para viajes.',
+      price: 45000,
+      stock: 0, 
+      is_active: true,
+      id_category: termosCategory.id_category,
+      id_seller: vendedorApp.id_seller,
+      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqTIM0pMtLimNWlcd0Dv95CPUspZtbwfEOHoyG'
+    },
+
+    // --- PRODUCTOS DEL VENDEDOR 2 ---
+    {
+      name: 'Mate Camionero Uruguayo',
+      description: 'Mate camionero original de Uruguay, calabaza gruesa y virola lisa de acero.',
+      price: 38000,
+      stock: 10,
+      is_active: true,
+      id_category: matesCategory.id_category,
+      id_seller: vendedoresMap.get('Artesanías Sur').id_seller,
+      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriq0n9GxGlkHnZxVbU7KpwWyl3CdBe0cIrv1Dhs'
+    },
+    {
+      name: 'Bombilla Pico Loro Alpaca Maciza',
+      description: 'Bombilla forjada en alpaca maciza con detalles florales. No se tapa nunca.',
+      price: 18500,
+      stock: 25,
+      is_active: true,
+      id_category: bombillasCategory.id_category,
+      id_seller: vendedoresMap.get('Artesanías Sur').id_seller,
+      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqxYHfsLjzQwyqZUrAosCduOYGltKf4XhIiT60'
+    },
+    {
+      name: 'Canasta Matera de Cuero Crudo',
+      description: 'Matera 100% cuero vacuno crudo con costuras a mano. División para termo y mate.',
+      price: 55000,
+      stock: 4,
+      is_active: true,
+      id_category: canastasCategory.id_category,
+      id_seller: vendedoresMap.get('Artesanías Sur').id_seller,
+      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqqhXc9QZm2JhpTiIMtdQ9KEcHF0kvgDZ8bGXy'
+    },
+
+    // --- PRODUCTOS DEL VENDEDOR 3 ---
+    {
+      name: 'Termo Lumilagro Acero 1L',
+      description: 'Termo Lumilagro modelo acero, excelente relación calidad-precio para el día a día.',
+      price: 28000,
+      stock: 40,
+      is_active: true,
+      id_category: termosCategory.id_category,
+      id_seller: vendedoresMap.get('El Rey del Termo').id_seller,
+      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqVs1G3S45ykavKJ2UcTYh9ZwuWjrDR4oEztx6'
+    },
+    {
+      name: 'Combo Estudiantil (Termo + Mate + Bombilla)',
+      description: 'Combo ideal para la facu. Termo bala, mate de vidrio forrado y bombilla económica.',
+      price: 35000,
+      discount_price: 29900, 
+      stock: 15,
+      is_active: true,
+      id_category: combosCategory.id_category,
+      id_seller: vendedoresMap.get('El Rey del Termo').id_seller,
+      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqNaWYveGZJdsra2Ppxv67XbMn3lOVKT4mutyI'
+    },
+    {
+      name: 'Yerbera y Azucarera de Lata - Vintage',
+      description: 'Set de latas con pico vertedor plástico, diseño vintage anti-humedad.',
+      price: 8500,
+      stock: 30,
+      is_active: true,
+      id_category: yerberasCategory.id_category,
+      id_seller: vendedoresMap.get('El Rey del Termo').id_seller,
+      image_url: 'https://aa2b4pe3oj.ufs.sh/f/IHl2mafHoriqCqgPvAvHKX4cnsN596HIyogGjxVhUAwekZrP'
     }
   ];
 
@@ -228,165 +205,13 @@ async function main() {
     
     if (!existe) {
       await prisma.producto.create({ data: prod });
-      console.log(`  ➕ Producto creado: ${prod.name}`);
+      console.log(`  ➕ Producto nuevo creado: ${prod.name}`);
     } else {
-      // NUEVO: Si ya existe, pisamos los datos viejos con los nuevos (ej: las fotos)
-      await prisma.producto.update({
-        where: { id_item: existe.id_item }, 
-        data: prod
-      });
-      console.log(`  🔄 Producto actualizado: ${prod.name}`);
+      // SOLO INFORMA, NO ACTUALIZA
+      console.log(`  ✔️ Producto ya existe: ${prod.name} (Omitiendo)`);
     }
   }
-  // ==========================================
-  // 4. CARGAR ÓRDENES DE COMPRA (Pruebas con matemáticas exactas)
-  // ==========================================
-  console.log('🛍️ Generando órdenes de compra de prueba...');
-
-  const mateImperial = await prisma.producto.findFirst({ where: { name: 'Mate Imperial Premium - Cuero Negro' } });
-  const termoStanley = await prisma.producto.findFirst({ where: { name: 'Termo Stanley Classic 1 Litro' } });
-  const yerbera = await prisma.producto.findFirst({ where: { name: 'Yerbera de Cerámica - 1kg' } });
-  if (mateImperial && termoStanley && yerbera) {
-    // Convertimos los Decimals a números de JS para poder hacer matemática
-    const precioMate = Number(mateImperial.price);
-    const precioTermo = Number(termoStanley.price);
-    const precioYerbera = Number(yerbera.price);
-    //----------Calculos para las ordenes-------------
-    const envioOrden1 = 1000;
-    const itemsOrden1 = precioMate * 1; 
-    const totalPaquete1 = itemsOrden1 + envioOrden1; 
-
-    const envioOrden2 = 2500;
-    const itemsOrden2 = precioTermo * 1; 
-    const totalPaquete2 = itemsOrden2 + envioOrden2; 
-
-    const envioOrden3 = 1500;
-    const itemsOrden3 = (precioMate * 1) + (precioTermo * 1); 
-    const totalPaquete3 = itemsOrden3 + envioOrden3; 
-
-    const envioOrden4 = 5000;
-    const itemsOrden4 = (precioMate * 1) + (precioTermo * 1) + (precioYerbera * 1);
-    const totalPaquete4 = itemsOrden4 + envioOrden4;
-    //-----------------------------------------------------------------
-    const ordenesPrueba = [
-      {
-        id_purchase_order: 'ORD-TEST-001',
-        id_buyer: 'buyer_test_777', 
-        id_buyer_app: 'app_buyer_iaw', 
-        total_price: totalPaquete1, 
-        status: EstadoOrden.PAGADA, 
-        id_payment_operation: 'mp_test_123456',
-        paquetes: {
-          create: [{
-            id_seller_app: 'app_seller_iaw', 
-            id_seller: vendedorApp.id_seller,
-            status: EstadoPaquete.PREPARADO, 
-            shipping_cost: envioOrden1,
-            price_package: totalPaquete1, 
-            articulos: {
-              create: [{
-                id_item: mateImperial.id_item, 
-                quantity: 1,
-                sale_price: precioMate 
-              }]
-            }
-          }]
-        }
-      },
-      {
-        id_purchase_order: 'ORD-TEST-002',
-        id_buyer: 'buyer_test_888',
-        id_buyer_app: 'app_buyer_iaw',
-        total_price: totalPaquete2,
-        status: EstadoOrden.PAGADA,
-        id_payment_operation: 'mp_test_789012',
-        paquetes: {
-          create: [{
-            id_seller_app: 'app_seller_iaw',
-            id_seller: vendedorApp.id_seller,
-            status: EstadoPaquete.ENTREGADO,
-            carrier_name: 'Andreani', 
-            shipping_cost: envioOrden2,
-            price_package: totalPaquete2,
-            id_shipments: 'track_and_9999', 
-            articulos: {
-              create: [{
-                id_item: termoStanley.id_item,
-                quantity: 1,
-                sale_price: precioTermo
-              }]
-            }
-          }]
-        }
-      },
-      {
-        id_purchase_order: 'ORD-TEST-003',
-        id_buyer: 'buyer_test_999',
-        id_buyer_app: 'app_buyer_iaw',
-        total_price: totalPaquete3,
-        status: EstadoOrden.CANCELADA, 
-        id_payment_operation: 'mp_test_refunded',
-        paquetes: {
-          create: [{
-            id_seller_app: 'app_seller_iaw',
-            id_seller: vendedorApp.id_seller,
-            status: EstadoPaquete.CANCELADO,
-            shipping_cost: envioOrden3,
-            price_package: totalPaquete3,
-            articulos: {
-              create: [
-                { id_item: mateImperial.id_item, quantity: 1, sale_price: precioMate },
-                { id_item: termoStanley.id_item, quantity: 1, sale_price: precioTermo }
-              ]
-            }
-          }]
-        }
-      },
-      {
-        id_purchase_order: 'ORD-TEST-004',
-        id_buyer: 'buyer_test_555',
-        id_buyer_app: 'app_buyer_iaw',
-        total_price: totalPaquete4,
-        status: EstadoOrden.PAGADA,
-        id_payment_operation: 'mp_test_345678',
-        paquetes: {
-          create: [{
-            id_seller_app: 'app_seller_iaw',
-            id_seller: vendedorApp.id_seller,
-            status: EstadoPaquete.RETIRADO,
-            id_shipments: 'track_and_8888',
-            shipping_cost: envioOrden4,
-            price_package: totalPaquete4,
-            articulos: {
-              create: [{
-                id_item: mateImperial.id_item,
-                quantity: 1,
-                sale_price: precioMate
-              }]
-            }
-          }]
-        }
-      }
-    ];
-
-    for (const orden of ordenesPrueba) {
-      const existeOrden = await prisma.ordenCompra.findUnique({ 
-        where: { id_purchase_order: orden.id_purchase_order } 
-      });
-      
-      if (!existeOrden) {
-        await prisma.ordenCompra.create({ data: orden });
-        console.log(`  ➕ Orden creada: ${orden.id_purchase_order}`);
-      } else {
-        await prisma.ordenCompra.update({
-          where: { id_purchase_order: orden.id_purchase_order },
-          data: orden
-        });
-        console.log(`  🔄 Orden actualizada: ${orden.id_purchase_order}`);
-      }
-    }
-  }
-  console.log('✅ ¡Base de datos poblada con éxito!');
+  console.log('✅ ¡Seed completado respetando tus datos actuales!');
 }
 
 main()

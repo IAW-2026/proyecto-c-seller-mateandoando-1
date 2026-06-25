@@ -216,7 +216,7 @@ export async function POST(request: Request) {
         }
 
         // B. Creamos la orden de compra junto con los paquetes enlazados
-        return await tx.ordenCompra.create({
+        const ordenCreada= await tx.ordenCompra.create({
           data: {
             id_buyer,
             id_buyer_app: id_buyer_app || "buyer-app-default", 
@@ -230,8 +230,18 @@ export async function POST(request: Request) {
           },
           include: { paquetes: true },
         });
-      });
-
+        for (const id_seller of productosMap.keys()) {
+          await tx.vendedor.update({
+            where: { id_seller: id_seller },
+            data: {
+              sales_made: {
+                increment: 1
+              }
+            }
+          });
+      }
+      return ordenCreada;
+    });
       // Estructura de respuesta limpia para la Buyer App según contrato
       const response = {
         id_purchase_order: nuevaOrden.id_purchase_order,
