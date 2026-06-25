@@ -43,7 +43,7 @@ export async function PATCH(
         db.ordenCompra.update({
           where: { id_purchase_order: id_purchase_order },
           data: { status: "PAGADA",
-            id_payment_operation: body.id_payment_operation
+            id_payment_operation: id_payment_operation
            }
         }),
         db.paquete.updateMany({

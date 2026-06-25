@@ -60,7 +60,15 @@ export default function BotoneraOrden({ ordenActiva }: { ordenActiva: any }) {
       // Le pegamos a NUESTRA API interna para proteger la API Key
       const response = await fetch(`/api/payments/${ordenActiva.id_payment_operation}`);
 
-      if (!response.ok) throw new Error("Fallo al consultar pago");
+      if (response.status === 404) {
+        alert("El pago no se encontró en el servidor de Payments. Es posible que sea un registro de prueba antiguo.");
+        return; 
+      }
+
+      // 3. Si falla por otra cosa
+      if (!response.ok) {
+        throw new Error("Fallo al traer el pago desde nuestro proxy");
+      }
       const data = await response.json();
       alert(`Estado del pago: ${data.status}\nFecha de creación: ${new Date(data.created_at).toLocaleDateString()}`);
     } catch (error) {
