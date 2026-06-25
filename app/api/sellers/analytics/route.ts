@@ -2,6 +2,7 @@ import db from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
+  const fechaCorte = new Date("2026-06-21T00:00:00-03:00");
   try {
     // 1. VOLUMEN DE VENTAS (Suma de paquetes NO cancelados ni pendientes)
     // Usamos paquetes porque el dinero se divide por vendedor en la Seller App
@@ -19,7 +20,10 @@ export async function GET(request: Request) {
 
     // 2. CONTEO DE ÓRDENES Y PAQUETES
     const totalOrdenes = await db.ordenCompra.count({
-      where: { status: { not: "CANCELADA" } }
+      where: {
+      created_at: {
+      gte: fechaCorte,
+    },}
     });
 
     const totalPaquetes = await db.paquete.count({
