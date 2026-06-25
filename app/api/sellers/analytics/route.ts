@@ -14,6 +14,11 @@ export async function GET(request: Request) {
         status: {
           notIn: ["CANCELADO", "PENDIENTE"],
         },
+        ordenCompra: {
+          created_at: {
+            gte: fechaCorte,
+          }
+        }
       },
     });
     const volumenTransaccionado = Number(volumenResult._sum.price_package || 0);
