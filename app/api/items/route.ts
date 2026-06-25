@@ -56,10 +56,16 @@ export async function GET() {
   try {
     // Usamos db.producto e incluimos las relaciones según tu esquema
     const productos = await db.producto.findMany({
+      where: {
+        is_active: true,
+        stock: {
+          gt: 0 // "gt" significa Greater Than (Mayor a 0)
+        }
+      },
       include: {
         categoria: true, // Nombre de la relación en tu modelo Producto
         vendedor: true,  // Nombre de la relación en tu modelo Producto
-      },
+      }
     });
 
     // Mapeo para cumplir con el contrato 03-apis.md (id_item)
