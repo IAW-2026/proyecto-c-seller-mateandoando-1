@@ -28,7 +28,7 @@ export default function GridOrdenesPaginado({ misOrdenes }: { misOrdenes: any[] 
   return (
     <div className="mt-6 flex flex-col gap-6">
       
-      {/* 1. LA GRILLA DE TARJETAS (Acá está la magia) */}
+      {/* 1. LA GRILLA DE TARJETAS */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {ordenesParaMostrar.map((orden) => {
           const paquete = orden.paquetes[0];

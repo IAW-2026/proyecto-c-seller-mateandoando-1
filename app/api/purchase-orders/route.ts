@@ -79,20 +79,46 @@ export async function POST(request: Request) {
           { status: 404 }
         );
       }
+      
+      const cantidadPedida = item.quantity;
+      const cantidadActual = producto.stock;
+      
+      console.log("=== CONTROL DE INVENTARIO ===");
+      console.log(`Producto: ${producto.name}`);
+      console.log(`Cantidad Solicitada: ${cantidadPedida} (Tipo: ${typeof cantidadPedida})`);
+      console.log(`Stock en Base de Datos: ${cantidadActual} (Tipo: ${typeof cantidadActual})`);
+      console.log("=============================");
+
+      // Si por alguna razón la conversión falla o da un número inválido
+      if (isNaN(cantidadPedida) || cantidadPedida <= 0) {
+        return NextResponse.json(
+          { error: `La cantidad enviada para el producto ${producto.name} es inválida.` },
+          { status: 400 }
+        );
+      }
+
+      // Validación estricta de stock
+      if (cantidadPedida > cantidadActual) {
+        console.log("❌ STOCK INSUFICIENTE: Bloqueando creación de orden.");
+        return NextResponse.json(
+          { error: `Stock insuficiente para el producto "${producto.name}". Solicitado: ${cantidadPedida}, Disponible: ${cantidadActual}` },
+          { status: 400 }
+        );
+      }
 
       if (!productosMap.has(producto.id_seller)) {
         productosMap.set(producto.id_seller, []);
       }
-      
+
       const grupo = productosMap.get(producto.id_seller)!;
       grupo.push({
         producto,
         quantity: item.quantity,
-      });
+      });  
     }
-
+    
     // Crear los paquetes agrupados por vendedor
-    const paquetesData = [];
+    const paquetesData: any[] = [];
     let totalPrice = 0;
 
     for (const [id_seller, items_grupo] of productosMap) {
@@ -133,22 +159,38 @@ export async function POST(request: Request) {
       // ------------------------------------------
     }
 
-    const nuevaOrden = await db.ordenCompra.create({
-      data: {
-        id_buyer,
-        id_buyer_app: id_buyer_app || "buyer-app-default", 
-        total_price: Number(totalPrice.toFixed(2)),
-        status: "CREADA",
-        zip_code,
-        address_snapshot,
-        paquetes: {
-          create: paquetesData, 
+    const nuevaOrden = await db.$transaction(async (tx) => {
+      
+      // A. Descontamos el stock de cada producto usando la operación decrement
+      for (const item of items) {
+        await tx.producto.update({
+          where: { id_item: item.id_item },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+      }
+
+      // B. Creamos la orden de compra junto con los paquetes enlazados
+      return await tx.ordenCompra.create({
+        data: {
+          id_buyer,
+          id_buyer_app: id_buyer_app || "buyer-app-default", 
+          total_price: Number(totalPrice.toFixed(2)),
+          status: "CREADA",
+          zip_code,
+          address_snapshot,
+          paquetes: {
+            create: paquetesData, 
+          },
         },
-      },
-      include: { paquetes: true },
+        include: { paquetes: true },
+      });
     });
 
-    //-------------------------------------------
+    // Estructura de respuesta limpia para la Buyer App según contrato
     const response = {
       id_purchase_order: nuevaOrden.id_purchase_order,
       total_price: Number(nuevaOrden.total_price),
@@ -160,7 +202,6 @@ export async function POST(request: Request) {
       zip_code: nuevaOrden.zip_code,
       address_snapshot: nuevaOrden.address_snapshot
     };
-    // ------------------------------------------
 
     return NextResponse.json(response, { status: 201 });
 

@@ -1,57 +1,64 @@
-// app/(dashboard)/ordenes/[id]/BotonDetallePago.tsx
+// app/(dashboard)/ordenes/BotonDetalleComprador.tsx
 "use client";
 
 import { useState } from "react";
-import { CreditCard, X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { User, X, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface Props {
-  idPaymentOperation: string | null;
-  className?: string; // Permite que el padre le pase los colores/bordes
-  children?: React.ReactNode; // Permite que el padre le pase los íconos y textos
+  idBuyer: string | null;
+  className?: string; 
+  children?: React.ReactNode; 
 }
 
-export default function BotonDetallePago({ idPaymentOperation, className, children }: Props) {
+export default function BotonDetalleComprador({ idBuyer, className, children }: Props) {
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [detalle, setDetalle] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [modalAbierto, setModalAbierto] = useState(false);
-
-  const consultarPago = async () => {
+  
+  const consultarComprador = async () => {
     setModalAbierto(true);
     
-    if (!idPaymentOperation) return;
-    
+    if (!idBuyer) return;
+
     setCargando(true);
     setError(null);
-    setDetalle(null); 
+    setDetalle(null);
 
     try {
-      const res = await fetch(`/api/payments/${idPaymentOperation}`);
-      
-      if (!res.ok) {
-        throw new Error("No se pudo cargar el detalle del pago. El servidor de origen devolvió un error.");
-      }
+      const response = await fetch(`/api/buyers/${idBuyer}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" } 
+      });
 
-      const data = await res.json();
-      setDetalle(data); 
+      if (response.status === 404) {
+        throw new Error("El comprador ya no existe en el sistema (cuenta eliminada o datos antiguos).");
+      }
       
+      if (!response.ok) {
+        throw new Error("Fallo al traer los datos desde el servidor de compradores.");
+      }
+      
+      const data = await response.json();
+      setDetalle(data);
+
     } catch (err: any) {
-      setError(err.message); 
+      setError(err.message);
     } finally {
       setCargando(false);
     }
   };
 
   const cerrarModal = () => {
+    setModalAbierto(false);
     setDetalle(null);
     setError(null);
-    setModalAbierto(false);
   };
 
   return (
     <>
       <button
-        onClick={consultarPago}
+        onClick={consultarComprador}
         disabled={cargando}
         className={className}
       >
@@ -59,11 +66,10 @@ export default function BotonDetallePago({ idPaymentOperation, className, childr
       </button>
 
       {/* FONDO OSCURO DEL MODAL */}
-      {(detalle || error) && (
+      {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           
-          {/* CAJA BLANCA CENTRAL */}
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 text-left">
             
             {/* ENCABEZADO */}
             <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-white">
@@ -71,10 +77,9 @@ export default function BotonDetallePago({ idPaymentOperation, className, childr
                 {error ? (
                   <AlertCircle className="text-red-600" size={20} />
                 ) : (
-                  // Ícono de éxito ahora en negro
                   <CheckCircle2 className="text-black" size={20} />
                 )}
-                {error ? "Error en la consulta" : "Información del Pago"}
+                {error ? "Error en la consulta" : "Información del Comprador"}
               </h3>
               <button 
                 onClick={cerrarModal}
@@ -87,53 +92,48 @@ export default function BotonDetallePago({ idPaymentOperation, className, childr
             {/* CUERPO DEL MODAL */}
             <div className="p-5 flex flex-col gap-4">
               
-              {/* Error mantiene su color rojo por convención de UI */}
               {error && (
                 <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 text-sm font-medium leading-relaxed">
                   {error}
                 </div>
               )}
 
-              {/* Detalles exitosos en paleta monocromática (negro/gris oscuro) */}
+              {/* SI HAY DETALLE (Comprador encontrado) */}
               {detalle && (
                 <div className="flex flex-col gap-3 text-sm">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <span className="text-slate-600 font-medium">ID Operación</span>
-                    <span className="font-mono text-xs text-black bg-slate-100 border border-slate-200 px-2 py-1 rounded">
-                      {detalle.id_payment_operation || detalle.idPaymentOperation || idPaymentOperation}
+                    <span className="text-slate-600 font-medium">Nombre Completo</span>
+                    <span className="font-medium text-black text-right">
+                      {`${detalle.first_name || ''} ${detalle.last_name || ''}`.trim() || "Usuario anónimo"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <span className="text-slate-600 font-medium">Estado</span>
-                    {/* Badge de estado neutro oscuro */}
+                    <span className="text-slate-600 font-medium">Teléfono de Contacto</span>
+                    <span className="font-mono text-xs text-black bg-slate-100 border border-slate-200 px-2 py-1 rounded">
+                      {detalle.phone || "No registrado"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <span className="text-slate-600 font-medium">Estado de Cuenta</span>
                     <span className="font-bold px-2 py-0.5 rounded-md text-xs uppercase bg-slate-100 text-black border border-slate-300">
                       {detalle.status || "DESCONOCIDO"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <span className="text-slate-600 font-medium">Fecha</span>
-                    <span className="font-medium text-black">
-                      {detalle.created_at || detalle.createdAt 
-                        ? new Date(detalle.created_at || detalle.createdAt).toLocaleDateString('es-AR', {
-                            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'
-                          })
-                        : "No disponible"}
-                    </span>
-                  </div>
                   <div className="flex justify-between items-center pt-1">
-                    <span className="text-slate-600 font-medium">Monto Total</span>
-                    <span className="font-black text-lg text-black">
-                      ${Number(detalle.total_price || detalle.totalPrice || 0).toLocaleString('es-AR')}
+                    <span className="text-slate-600 font-medium">ID Interno</span>
+                    <span className="text-xs text-slate-400 font-mono truncate max-w-[150px]">
+                      {detalle.id_buyer || idBuyer}
                     </span>
                   </div>
                 </div>
               )}
-              {/* SI NO HAY ID DE PAGO */}
-              {!idPaymentOperation && !error && (
+
+              {/* SI NO HAY ID DE COMPRADOR */}
+              {!idBuyer && !error && (
                 <div className="flex flex-col gap-3 text-sm">
                   <div className="flex justify-center items-center pb-2">
                     <span className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-200 text-center font-medium w-full">
-                      Pago aún no registrado por la plataforma
+                      ID de comprador no disponible en esta orden
                     </span>
                   </div>
                 </div>
