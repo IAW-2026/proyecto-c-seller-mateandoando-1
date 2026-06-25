@@ -65,9 +65,35 @@ export async function POST(request: Request) {
 
     // ------------------------------------------
 
+    // PASO 0: Sanitizar y Agrupar el Carrito
+    // Esto salva las papas si el frontend (Gonzalo) manda ítems repetidos sin agrupar
+    const itemsAgrupadosMap = new Map<string, number>();
+    
+    for (const item of items) {
+      const cantidad = Number(item.quantity);
+      if (isNaN(cantidad) || cantidad <= 0) continue; // Filtramos basura
+
+      if (itemsAgrupadosMap.has(item.id_item)) {
+        // Si ya existe, le sumamos la cantidad
+        itemsAgrupadosMap.set(item.id_item, itemsAgrupadosMap.get(item.id_item)! + cantidad);
+      } else {
+        // Si es nuevo, lo registramos
+        itemsAgrupadosMap.set(item.id_item, cantidad);
+      }
+    }
+
+    // Convertimos el mapa de vuelta al formato del contrato [{ id_item, quantity }]
+    const itemsProcesados = Array.from(itemsAgrupadosMap.entries()).map(([id_item, quantity]) => ({
+      id_item,
+      quantity
+    }));
+
+    // Súper importante: A partir de acá, usamos 'itemsProcesados' en todo tu código
+    // Reemplazá 'for (const item of items)' por 'for (const item of itemsProcesados)' en tus bucles
+
     // Obtener información de todos los productos y agrupar por vendedor
     const productosMap = new Map<string, ItemGroup[]>();
-    for (const item of items) {
+    for (const item of itemsProcesados) {
       const producto = await db.producto.findUnique({
         where: { id_item: item.id_item },
         include: { vendedor: true },
@@ -159,52 +185,83 @@ export async function POST(request: Request) {
       // ------------------------------------------
     }
 
-    const nuevaOrden = await db.$transaction(async (tx) => {
-      
-      // A. Descontamos el stock de cada producto usando la operación decrement
-      for (const item of items) {
-        await tx.producto.update({
-          where: { id_item: item.id_item },
+    // PASO 3: Transacción de Base de Datos (Operación Atómica BLINDADA)
+    try {
+      const nuevaOrden = await db.$transaction(async (tx) => {
+        
+        // A. Descontamos el stock con un ESCUDO a nivel Base de Datos
+        for (const item of itemsProcesados) {
+          const cantidadPedida = Number(item.quantity);
+
+          // updateMany busca el producto PERO solo lo actualiza si el stock le alcanza
+          const actualizacion = await tx.producto.updateMany({
+            where: { 
+              id_item: item.id_item,
+              stock: {
+                gte: cantidadPedida // SÚPER ESCUDO: Stock actual debe ser Mayor o Igual a lo pedido
+              }
+            },
+            data: {
+              stock: {
+                decrement: cantidadPedida,
+              },
+            },
+          });
+
+          // Si actualizacion.count es 0, significa que no encontró el producto o NO TENÍA STOCK
+          if (actualizacion.count === 0) {
+            // Tirar este error rompe la transacción y deshace cualquier cambio previo
+            throw new Error(`STOCK_ERROR_${item.id_item}`); 
+          }
+        }
+
+        // B. Creamos la orden de compra junto con los paquetes enlazados
+        return await tx.ordenCompra.create({
           data: {
-            stock: {
-              decrement: item.quantity,
+            id_buyer,
+            id_buyer_app: id_buyer_app || "buyer-app-default", 
+            total_price: Number(totalPrice.toFixed(2)),
+            status: "CREADA",
+            zip_code,
+            address_snapshot,
+            paquetes: {
+              create: paquetesData, 
             },
           },
+          include: { paquetes: true },
         });
-      }
-
-      // B. Creamos la orden de compra junto con los paquetes enlazados
-      return await tx.ordenCompra.create({
-        data: {
-          id_buyer,
-          id_buyer_app: id_buyer_app || "buyer-app-default", 
-          total_price: Number(totalPrice.toFixed(2)),
-          status: "CREADA",
-          zip_code,
-          address_snapshot,
-          paquetes: {
-            create: paquetesData, 
-          },
-        },
-        include: { paquetes: true },
       });
-    });
 
-    // Estructura de respuesta limpia para la Buyer App según contrato
-    const response = {
-      id_purchase_order: nuevaOrden.id_purchase_order,
-      total_price: Number(nuevaOrden.total_price),
-      status: nuevaOrden.status,
-      packages: nuevaOrden.paquetes.map((pkg) => ({
-        id_package: pkg.id_package,
-        id_seller: pkg.id_seller,
-      })),
-      zip_code: nuevaOrden.zip_code,
-      address_snapshot: nuevaOrden.address_snapshot
-    };
+      // Estructura de respuesta limpia para la Buyer App según contrato
+      const response = {
+        id_purchase_order: nuevaOrden.id_purchase_order,
+        total_price: Number(nuevaOrden.total_price),
+        status: nuevaOrden.status,
+        packages: nuevaOrden.paquetes.map((pkg) => ({
+          id_package: pkg.id_package,
+          id_seller: pkg.id_seller,
+        })),
+        zip_code: nuevaOrden.zip_code,
+        address_snapshot: nuevaOrden.address_snapshot
+      };
 
-    return NextResponse.json(response, { status: 201 });
+      return NextResponse.json(response, { status: 201 });
 
+    } catch (error: any) {
+      // C. Atajamos nuestro error personalizado de stock para devolver un 400 limpio
+      if (error.message && error.message.includes('STOCK_ERROR')) {
+        return NextResponse.json(
+          { error: "Error de inventario: Uno o más productos de la orden superan el stock disponible. La compra fue rechazada." },
+          { status: 400 }
+        );
+      }
+      
+      console.error("Error creando la orden:", error);
+      return NextResponse.json(
+        { error: "Error interno del servidor al crear la orden" },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Error creando la orden:", error);
     return NextResponse.json(
