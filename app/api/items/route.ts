@@ -57,7 +57,7 @@ export async function GET() {
     // Usamos db.producto e incluimos las relaciones según tu esquema
     const productos = await db.producto.findMany({
       where: {
-        isActive: true,
+        is_active: true,
         stock: {
           gt: 0 // "gt" significa Greater Than (Mayor a 0)
         }

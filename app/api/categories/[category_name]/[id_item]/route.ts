@@ -33,7 +33,7 @@ export async function GET(
 
     // 4. Buscamos el producto específico en Neon filtrando por el NOMBRE de la categoría y el id_item
     // Nota: Como la Buyer App manda "termos" o "mates", filtramos por categoria.name
-    const producto = await db.producto.findUnique({
+    const producto = await db.producto.findFirst({
       where: {
         categoria: {// 1. Metete a la tabla Categoria
           name: { // 2. Buscá en la columna "name" de esa tabla
@@ -42,7 +42,7 @@ export async function GET(
           },
         },
         id_item: id_item, // Filtramos por el id_item específico
-        isActive: true  
+        is_active: true  
       },
       include: {  
         categoria: true,
