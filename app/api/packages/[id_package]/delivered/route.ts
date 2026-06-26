@@ -13,7 +13,6 @@ export async function PATCH(
     const body = await request.json();
 
     // 2. Capa de Seguridad: Validamos que quien llama sea realmente Shipping
-    // Lola nos manda la llave en el header "x-api-key"
     const apiKey = request.headers.get("x-api-key");
     const validApiKey = process.env.SELLER_API_KEY; 
 

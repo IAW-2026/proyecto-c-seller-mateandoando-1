@@ -66,7 +66,6 @@ export async function POST(request: Request) {
     // ------------------------------------------
 
     // PASO 0: Sanitizar y Agrupar el Carrito
-    // Esto salva las papas si el frontend (Gonzalo) manda ítems repetidos sin agrupar
     const itemsAgrupadosMap = new Map<string, number>();
     
     for (const item of items) {
@@ -88,9 +87,7 @@ export async function POST(request: Request) {
       quantity
     }));
 
-    // Súper importante: A partir de acá, usamos 'itemsProcesados' en todo tu código
-    // Reemplazá 'for (const item of items)' por 'for (const item of itemsProcesados)' en tus bucles
-
+    
     // Obtener información de todos los productos y agrupar por vendedor
     const productosMap = new Map<string, ItemGroup[]>();
     for (const item of itemsProcesados) {
@@ -108,12 +105,6 @@ export async function POST(request: Request) {
       
       const cantidadPedida = item.quantity;
       const cantidadActual = producto.stock;
-      
-      console.log("=== CONTROL DE INVENTARIO ===");
-      console.log(`Producto: ${producto.name}`);
-      console.log(`Cantidad Solicitada: ${cantidadPedida} (Tipo: ${typeof cantidadPedida})`);
-      console.log(`Stock en Base de Datos: ${cantidadActual} (Tipo: ${typeof cantidadActual})`);
-      console.log("=============================");
 
       // Si por alguna razón la conversión falla o da un número inválido
       if (isNaN(cantidadPedida) || cantidadPedida <= 0) {

@@ -6,6 +6,16 @@ export async function GET(request: Request) {
   // Calculamos la ventana de tiempo: Últimos 30 días
   const fechaCorte = new Date();
   fechaCorte.setDate(fechaCorte.getDate() - 30);
+  const apiKey = request.headers.get("x-api-key");
+  const validApiKey = process.env.SELLER_API_KEY; 
+
+  if (!apiKey || apiKey !== validApiKey) {
+      console.warn(`[Seguridad] Intento no autorizado en webhook de analiticas`);
+      return NextResponse.json(
+        { error: "Acceso denegado. API Key inválida o faltante." },
+        { status: 401 }
+      );
+    }
 
   try {
     // 1. VOLUMEN DE VENTAS Y CONTEOS (Lo que ya tenías)
