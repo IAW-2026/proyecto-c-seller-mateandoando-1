@@ -3,12 +3,11 @@ import db from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  // Calculamos la ventana de tiempo: Últimos 30 días
-  const fechaCorte = new Date();
-  fechaCorte.setDate(fechaCorte.getDate() - 30);
   const apiKey = request.headers.get("x-api-key");
   const validApiKey = process.env.SELLER_API_KEY; 
-
+   const fechaCorte = new Date();
+  fechaCorte.setDate(fechaCorte.getDate() - 30);
+  
   if (!apiKey || apiKey !== validApiKey) {
       console.warn(`[Seguridad] Intento no autorizado en webhook de analiticas`);
       return NextResponse.json(
@@ -27,11 +26,6 @@ export async function GET(request: Request) {
       where: {
         status: {
           notIn: ["CANCELADO", "PENDIENTE"],
-        },
-        ordenCompra: {
-          created_at: {
-            gte: fechaCorte,
-          }
         }
       },
     });
@@ -39,15 +33,13 @@ export async function GET(request: Request) {
 
     const totalOrdenes = await db.ordenCompra.count({
       where: {
-        created_at: { gte: fechaCorte },
         status: { notIn: ["CANCELADA"] }
       }
     });
 
     const totalPaquetes = await db.paquete.count({
       where: { 
-        status: { notIn: ["CANCELADO", "PENDIENTE"] },
-        ordenCompra: { created_at: { gte: fechaCorte } }
+        status: { notIn: ["CANCELADO", "PENDIENTE"] }
       }
     });
 
