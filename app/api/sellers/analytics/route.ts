@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     const volumenResult = await db.paquete.aggregate({
       _sum: {
         price_package: true,
+        shipping_cost: true,
       },
       where: {
         status: {
@@ -66,6 +67,7 @@ export async function GET(request: Request) {
       select: {
         name: true,
         sales_made: true,
+        rating: true,
       }
     });
 
@@ -130,7 +132,7 @@ export async function GET(request: Request) {
       detailed: {
         ticket_promedio_ars: Number(ticketPromedio.toFixed(2)),
         total_paquetes_vendidos: totalPaquetes,
-        by_status: desglosePorEstado,
+        costo_envio_promedio: totalPaquetes > 0 ? (Number(volumenResult._sum.shipping_cost || 0) / totalPaquetes) : 0,            by_status: desglosePorEstado,
       },
       charts: {
         top_vendedores: topVendedores,
